@@ -1,6 +1,7 @@
 <template>
   <div class="container">
     <h1>프로그램 목록</h1>
+    <button @click="showModal = true">모달 열기</button>
     
     <!-- 상단에 버튼 추가 -->
     <div class="button-container">
@@ -36,10 +37,24 @@
       </tbody>
     </table>
   </div>
+  <ModalSample v-if="showModal" @close="showModal = false" />
 </template>
 
 <script>
+import { ref } from 'vue';
+import ModalSample from './ModalSample.vue';
+
 export default {
+  components: {
+    ModalSample
+  },
+  setup() {
+    const showModal = ref(false);
+
+    return {
+      showModal,
+    };
+  }, 
   data() {
     return {
       // 등록된 프로그램 목록
