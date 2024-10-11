@@ -121,7 +121,7 @@ export default {
 /* @font-face를 사용하여 폰트를 정의 */
 @font-face {
   font-family: 'KCCMurukmuruk';
-  src: url('C:\Users\user\Desktop\sample_project\repo_lab_ch6_sample\frontend\sam\src\fonts\KCCMurukmuruk.ttf') format('truetype');
+  src: url('@/fonts/KCCMurukmuruk.ttf') format('truetype');
 }
 
 .container {  
