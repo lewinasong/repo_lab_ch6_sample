@@ -41,7 +41,7 @@
   /* 커스텀 폰트 설정 */
   @font-face {
     font-family: 'KCCMurukmuruk'; /* 폰트 이름 정의 */
-    src: url('C:/Users/user/Desktop/sample_project/repo_lab_ch6_sample/frontend/sam/src/fonts/KCCMurukmuruk.ttf') format('truetype'); /* 폰트 파일 경로 */
+    src: url('@/fonts/KCCMurukmuruk.ttf') format('truetype'); /* 폰트 파일 경로 */
   }
   
   /* 페이지 전체 레이아웃 설정 */

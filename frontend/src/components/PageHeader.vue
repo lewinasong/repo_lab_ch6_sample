@@ -26,7 +26,7 @@ export default {
 
 <style scoped>
 header {
-  background-image: url('C:/Users/user/Desktop/sample_project/repo_lab_ch6_sample/frontend/sam/src/assets/upimage.jpg'); /* 이미지 경로 설정 */
+  background-image: url('@/assets/upimage.jpg'); /* 상대 경로로 수정 */
   background-size: cover; /* 이미지가 전체 배경을 덮도록 설정 */
   background-position: center; /* 배경 이미지 위치 */
   padding: 20px;
@@ -41,7 +41,7 @@ header {
 /* @font-face를 사용하여 폰트를 정의 */
 @font-face {
   font-family: 'KCCMurukmuruk';
-  src: url('C:/Users/user/Desktop/sample_project/repo_lab_ch6_sample/frontend/sam/src/fonts/KCCMurukmuruk.ttf') format('truetype');
+  src: url('@/fonts/KCCMurukmuruk.ttf') format('truetype'); /* 상대 경로로 수정 */
 }
 
 .system-name {
