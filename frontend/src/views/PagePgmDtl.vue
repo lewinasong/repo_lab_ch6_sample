@@ -139,7 +139,7 @@ export default {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'start_programs.bat';
+      link.download = 'PC세팅자동화.bat';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
