@@ -1,18 +1,20 @@
 package com.example.auto_setting.controller;
 
 import com.example.auto_setting.service.ProgramService;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api")
-public class ProgramController {
+public class LoginController {
 
     @Autowired
     private ProgramService programService;
@@ -22,7 +24,9 @@ public class ProgramController {
         String empNo = empInfo.get("EMP_NO");
 
         // 서비스에서 로그인 검증 및 EMP_NM 반환
-        String empName = programService.verifyLogin(empNo);
+        // @minsoo: 실행을 위해 잠시 주석 처리 해두었습니다.
+//        String empName = programService.verifyLogin(empNo);
+        String empName = null;
 
         if (empName != null) {
             // 정상 처리 시 EMP_NM 반환

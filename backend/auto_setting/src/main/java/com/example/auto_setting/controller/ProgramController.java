@@ -64,6 +64,7 @@ public class ProgramController {
         private String empNo;
         private String filePath;
 
+        // @minsoo: TODO: Getter와 Setter는 @Data에 포함되어 있으니 제거하셔도 됩니다!
         public String getPgmId() { return pgmId; }
 
         public void setPgmId(String pgmId) { this.pgmId = pgmId; }
