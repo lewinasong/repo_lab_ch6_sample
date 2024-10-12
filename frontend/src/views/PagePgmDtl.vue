@@ -42,7 +42,7 @@
 
     <!-- 정렬된 프로그램 목록 표시 -->
     <div v-if="sortedPrograms.length > 0">
-      <h2>정렬된 프로그램 목록</h2>
+      <h2>변경후 프로그램 실행순서</h2>
       <table class="fixed-table">
         <thead>
           <tr>
