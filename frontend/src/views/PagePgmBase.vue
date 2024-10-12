@@ -61,7 +61,7 @@ export default {
       programs: [
         {
           name: "SG Client",
-          filePath: "C:\\Users\\82103\\OneDrive\\바탕 화면",
+          filePath: "C:\\Users\\82103\\OneDrive\\SG Client.exe",
           registerDate: "2024-09-27",
           updateDate: "2024-09-27"
         },
