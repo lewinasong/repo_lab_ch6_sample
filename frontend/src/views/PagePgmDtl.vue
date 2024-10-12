@@ -1,4 +1,3 @@
-<!-- PagePgmDtl.vue -->
 <template>
   <div class="container">
     <h1>프로그램 실행순서 설정</h1>
@@ -46,7 +45,7 @@
         </tbody>
       </table>
       <!-- 저장 버튼 추가 -->
-      <button class="save_button" @click="savePrograms">저장</button>
+      <button class="save_button" @click="confirmSave">저장</button>
     </div>
   </div>
 </template>
@@ -104,7 +103,7 @@ export default {
 
       // 프로그램 수보다 순번이 큰지 체크
       if (this.hasOrderExceedingProgramCount()) {
-        alert('순번은 '+ this.programs.length +'이하로 입력해주세요');
+        alert('순번은 ' + this.programs.length + '이하로 입력해주세요');
         return;
       }
 
@@ -112,30 +111,69 @@ export default {
       this.sortedPrograms = this.programs
         .filter(program => program.order !== '' && parseInt(program.order) > 0)
         .sort((a, b) => parseInt(a.order) - parseInt(b.order));
+    },
+    // 저장 버튼 클릭 시 확인 메시지
+    confirmSave() {
+      const confirmation = confirm('설정한 순서로 실행파일이 생성됩니다. 계속하시겠습니까?');
+      if (confirmation) {
+        this.savePrograms();
+      } else {
+        alert('작업이 취소되었습니다.');
+      }
+    },
+    // .bat 파일 생성
+    savePrograms() {
+      // .bat 파일의 내용을 작성
+      let batContent = '@echo off\nchcp 65001 > nul\n\necho Starting all programs...\n\n';
+
+      // 예시 프로그램 실행 명령어 추가
+      batContent += 'start "" "C:\\SET_PC\\Visual Studio Code.lnk"\n';
+      batContent += 'timeout /t 3 /nobreak > nul\n';
+      batContent += 'start "" "C:\\SET_PC\\Git Bash.lnk"\n';
+      batContent += 'timeout /t 3 /nobreak > nul\n';
+      batContent += 'start "" "C:\\SET_PC\\Slack.lnk"\n';
+
+      batContent += '\necho All programs started.\npause\n';
+
+      // UTF-8 BOM 추가
+      const utf8Bom = '\uFEFF';
+
+      // Blob을 생성하여 .bat 파일로 저장 (UTF-8 BOM 포함)
+      const blob = new Blob([utf8Bom + batContent], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'start_programs.bat';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      alert('PC세팅 자동화 파일생성이 완료되었습니다.');
     }
   }
 };
 </script>
 
 <style scoped>
-/* @font-face를 사용하여 폰트를 정의 */
+/* 스타일 설정은 이전과 동일 */
 @font-face {
   font-family: 'KCCMurukmuruk';
   src: url('@/fonts/KCCMurukmuruk.ttf') format('truetype');
 }
 
-.container {  
-  width: 60%; /* 너비를 60%로 설정 */
-  max-width: 800px; /* 최대 너비를 800px로 제한 */
-  margin: 0 auto; /* 가로 중앙 정렬 */
-  padding: 80px 0; /* 상하 80px 패딩, 좌우 패딩은 0 */
+.container {
+  width: 60%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 80px 0;
   font-family: 'KCCMurukmuruk', sans-serif;
 }
 
 h1 {
   text-align: center;
-  font-size : 30px;
-  padding: 20px 0; /* 상하 20px 패딩, 좌우 패딩은 0 */
+  font-size: 30px;
+  padding: 20px 0;
 }
 
 table {
@@ -145,14 +183,14 @@ table {
 }
 
 .fixed-table {
-  table-layout: fixed; /* 열 너비를 고정 */
+  table-layout: fixed;
 }
 
 th, td {
   border: 1px solid black;
   padding: 10px;
   text-align: center;
-  width: 50%; /* 두 열의 너비를 동일하게 설정 */
+  width: 50%;
 }
 
 input {
@@ -161,16 +199,15 @@ input {
   text-align: center;
 }
 
-/* 테이블 헤더에 배경색과 텍스트 색상 추가 */
 .header-cell {
-  background-color: #fcf4c0; /* 배경색 */
-  color: black; /* 텍스트 색상 */
+  background-color: #fcf4c0;
+  color: black;
   font-family: 'KCCMurukmuruk', sans-serif;
 }
 
 .header-cell2 {
-  background-color: #cefbc9; /* 배경색 */
-  color: black; /* 텍스트 색상 */
+  background-color: #cefbc9;
+  color: black;
   font-family: 'KCCMurukmuruk', sans-serif;
 }
 
@@ -179,25 +216,22 @@ button {
   padding: 10px 20px;
   font-size: 16px;
   font-family: 'KCCMurukmuruk', sans-serif;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 그림자 추가 */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .save_button {
-  background-color:#FFD700; /* 배경색 */
+  background-color: #FFD700;
   font-family: 'KCCMurukmuruk', sans-serif;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 그림자 추가 */
-
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 h2 {
   margin-top: 30px;
-  font-size : 30px;
-  padding: 20px 0; /* 상하 20px 패딩, 좌우 패딩은 0 */
+  font-size: 30px;
+  padding: 20px 0;
 }
 
 .sorted-table {
   margin-top: 20px;
 }
 </style>
-
-

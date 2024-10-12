@@ -89,24 +89,43 @@ export default {
     };
   },
   methods: {
+    // 프로그램 경로에 한글이 포함되었는지 검사하는 메서드
+    containsKorean(text) {
+      const koreanRegex = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/;
+      return koreanRegex.test(text);
+    },
     // 프로그램 등록 메서드
     registerProgram() {
+      const name = prompt("프로그램명을 입력하세요");
+      const filePath = prompt("실행파일 경로를 입력하세요");
+
+      if (this.containsKorean(filePath)) {
+        alert("실행파일경로는 영문 및 숫자만 가능합니다. 파일경로를 수정 후 재등록해주세요");
+        return;
+      }
+
       const newProgram = {
-        name: prompt("프로그램명을 입력하세요"),
-        filePath: prompt("실행파일 경로를 입력하세요"),
+        name,
+        filePath,
         registerDate: new Date().toISOString().slice(0, 10),
         updateDate: new Date().toISOString().slice(0, 10)
       };
+      
       if (newProgram.name && newProgram.filePath) {
         this.programs.push(newProgram);
       }
     },
-
     // 프로그램 수정 메서드
     updateProgram() {
       if (this.selectedProgram) {
         const newName = prompt("새 프로그램명을 입력하세요", this.selectedProgram.name);
         const newFilePath = prompt("새 실행파일 경로를 입력하세요", this.selectedProgram.filePath);
+        
+        if (this.containsKorean(newFilePath)) {
+          alert("프로그램경로에 한글이 포함되어있습니다. 영문경로로 수정 후 재입력해주세요.");
+          return;
+        }
+
         if (newName && newFilePath) {
           this.selectedProgram.name = newName;
           this.selectedProgram.filePath = newFilePath;
@@ -114,7 +133,6 @@ export default {
         }
       }
     },
-
     // 프로그램 삭제 메서드
     removeProgram() {
       if (this.selectedProgram) {
@@ -131,7 +149,6 @@ export default {
 </script>
 
 <style scoped>
-
 @font-face {
   font-family: 'KCCMurukmuruk';
   src: url('@/fonts/KCCMurukmuruk.ttf') format('truetype');
@@ -168,17 +185,7 @@ button:disabled {
   cursor: not-allowed;
 }
 
-.reg_button{
-  font-family: 'KCCMurukmuruk', sans-serif;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 그림자 추가 */
-}
-
-.upd_button{
-  font-family: 'KCCMurukmuruk', sans-serif;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 그림자 추가 */
-}
-
-.del_button{
+.reg_button, .upd_button, .del_button {
   font-family: 'KCCMurukmuruk', sans-serif;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 그림자 추가 */
 }
@@ -197,5 +204,4 @@ th, td {
   padding: 8px;
   text-align: center;
 }
-
 </style>
