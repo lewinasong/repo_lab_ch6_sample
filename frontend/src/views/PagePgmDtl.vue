@@ -2,6 +2,19 @@
   <div class="container">
     <h1>프로그램 실행순서 설정</h1>
 
+    <!-- 실행 대기 시간 입력 필드 추가 -->
+    <div class="delay-container">
+      <label for="wait-time">실행 대기 시간 (초):</label>
+      <input
+        type="text" 
+        id="wait-time"
+        v-model="waitTime"
+        placeholder="예: 3"
+        min="0"
+        class="wait-time-input"
+      />
+    </div>
+
     <!-- 프로그램 순서 입력 폼 -->
     <table class="fixed-table">
       <thead>
@@ -54,66 +67,58 @@
 export default {
   data() {
     return {
-      // 프로그램 목록
       programs: [
         { id: 1, name: "SG Client", order: '' },
         { id: 2, name: "Chakra", order: '' },
         { id: 3, name: "NeoWorks", order: '' },
         { id: 4, name: "Slack", order: '' }
       ],
-      sortedPrograms: []
+      sortedPrograms: [],
+      waitTime: 3 // 기본 실행 대기 시간
     };
   },
   methods: {
-    // 순번 유효성 검사 (0 이상의 숫자인지 확인)
     validateOrder(program) {
       if (!/^\d*$/.test(program.order) || (program.order !== '' && parseInt(program.order) <= 0)) {
         program.order = '';
         alert('0 이상의 숫자를 입력하세요.');
       }
     },
-    // 중복된 순번이 있는지 확인하는 메서드
     hasDuplicateOrders() {
       const orders = this.programs.map(program => program.order).filter(order => order !== '');
       const uniqueOrders = new Set(orders);
       return uniqueOrders.size !== orders.length;
     },
-    // 순번이 입력되지 않은 프로그램이 있는지 확인하는 메서드
     hasEmptyOrders() {
       return this.programs.some(program => program.order === '');
     },
-    // 입력된 순번 중 프로그램 수보다 큰 값이 있는지 확인하는 메서드
     hasOrderExceedingProgramCount() {
       const maxOrder = Math.max(...this.programs.map(program => parseInt(program.order) || 0));
       return maxOrder > this.programs.length;
     },
-    // 입력된 순번에 따라 프로그램 목록 정렬
     sortPrograms() {
-      // 순번 입력 완료 여부 체크
       if (this.hasEmptyOrders()) {
         alert('순번입력이 완료되지 않았습니다. 확인 후 진행해주세요.');
         return;
       }
-
-      // 중복된 순번 체크
       if (this.hasDuplicateOrders()) {
         alert('중복된 순번이 있습니다. 순번을 확인해주세요.');
         return;
       }
-
-      // 프로그램 수보다 순번이 큰지 체크
       if (this.hasOrderExceedingProgramCount()) {
         alert('순번은 ' + this.programs.length + '이하로 입력해주세요');
         return;
       }
-
-      // 순번이 유효한 프로그램만 필터링하여 정렬
       this.sortedPrograms = this.programs
         .filter(program => program.order !== '' && parseInt(program.order) > 0)
         .sort((a, b) => parseInt(a.order) - parseInt(b.order));
     },
-    // 저장 버튼 클릭 시 확인 메시지
     confirmSave() {
+      if (this.waitTime < 3) {
+        alert('실행대기시간은 3초이상 설정 가능합니다.');
+        return;
+      }
+
       const confirmation = confirm('설정한 순서로 실행파일이 생성됩니다. 계속하시겠습니까?');
       if (confirmation) {
         this.savePrograms();
@@ -121,24 +126,15 @@ export default {
         alert('작업이 취소되었습니다.');
       }
     },
-    // .bat 파일 생성
     savePrograms() {
-      // .bat 파일의 내용을 작성
       let batContent = '@echo off\nchcp 65001 > nul\n\necho Starting all programs...\n\n';
-
-      // 예시 프로그램 실행 명령어 추가
-      batContent += 'start "" "C:\\SET_PC\\Visual Studio Code.lnk"\n';
-      batContent += 'timeout /t 3 /nobreak > nul\n';
-      batContent += 'start "" "C:\\SET_PC\\Git Bash.lnk"\n';
-      batContent += 'timeout /t 3 /nobreak > nul\n';
-      batContent += 'start "" "C:\\SET_PC\\Slack.lnk"\n';
-
+      this.sortedPrograms.forEach(program => {
+        batContent += `start "" "${program.name}"\n`;
+        batContent += `timeout /t ${this.waitTime} /nobreak > nul\n`;
+      });
       batContent += '\necho All programs started.\npause\n';
 
-      // UTF-8 BOM 추가
       const utf8Bom = '\uFEFF';
-
-      // Blob을 생성하여 .bat 파일로 저장 (UTF-8 BOM 포함)
       const blob = new Blob([utf8Bom + batContent], { type: 'text/plain;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -156,7 +152,6 @@ export default {
 </script>
 
 <style scoped>
-/* 스타일 설정은 이전과 동일 */
 @font-face {
   font-family: 'KCCMurukmuruk';
   src: url('@/fonts/KCCMurukmuruk.ttf') format('truetype');
@@ -174,6 +169,16 @@ h1 {
   text-align: center;
   font-size: 30px;
   padding: 20px 0;
+}
+
+.delay-container label {
+  margin-right: 20px; /* 라벨과 입력창 사이의 간격 */
+}
+
+.wait-time-input {
+  width: 60px; /* 가로 길이 조정 */
+  padding: 5px;
+  text-align: center;
 }
 
 table {
