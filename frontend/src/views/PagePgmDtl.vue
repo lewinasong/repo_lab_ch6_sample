@@ -68,10 +68,10 @@ export default {
   data() {
     return {
       programs: [
-        { id: 1, name: "SG Client", order: '' },
-        { id: 2, name: "Chakra", order: '' },
-        { id: 3, name: "NeoWorks", order: '' },
-        { id: 4, name: "Slack", order: '' }
+        { id: 1, name: "SG Client", filePath: "C:\\Users\\82103\\OneDrive\\SG Client.exe", order: '' },
+        { id: 2, name: "Chakra", filePath: "C:\\Program Files\\Chakra", order: '' },
+        { id: 3, name: "NeoWorks", filePath: "C:\\NeoWorks\\neo.exe", order: '' },
+        { id: 4, name: "Slack", filePath: "C:\\Users\\82103\\AppData\\Local\\slack\\slack.exe", order: '' }
       ],
       sortedPrograms: [],
       waitTime: 3 // 기본 실행 대기 시간
@@ -127,15 +127,45 @@ export default {
       }
     },
     savePrograms() {
-      let batContent = '@echo off\nchcp 65001 > nul\n\necho Starting all programs...\n\n';
-      this.sortedPrograms.forEach(program => {
-        batContent += `start "" "${program.name}"\n`;
-        batContent += `timeout /t ${this.waitTime} /nobreak > nul\n`;
+      let batContent = '@echo off\nsetlocal EnableDelayedExpansion\n';
+
+      this.sortedPrograms.forEach((program, index) => {
+        const filePath = program.filePath;
+        const fileName = filePath.split("\\").pop();
+        const fileExtension = fileName.split(".").pop();
+
+        // 파일 존재 여부 확인 및 프로그램 실행
+        batContent += `if exist "${filePath}" (\n`;
+        batContent += `    start "" "${filePath}"\n`;
+        batContent += `    timeout /t ${this.waitTime} /nobreak > nul\n`;
+
+        if (fileExtension === "exe") {
+          batContent += `    for /f "tokens=2 delims=," %%i in ('tasklist /FI "IMAGENAME eq ${fileName}" /FO CSV ^| findstr /I "${fileName}"') do (\n`;
+          batContent += `        set "pid_${index}=%%~i"\n`;
+          batContent += `        set "status_${index}=1"\n`;
+          batContent += `    )\n`;
+          batContent += `    if defined pid_${index} (\n`;
+          batContent += `        echo ${program.name} pid: !pid_${index}!\n`;
+          batContent += `    ) else (\n`;
+          batContent += `        echo ${program.name} pid: Not found\n`;
+          batContent += `    )\n`;
+        } else {
+          batContent += `    echo ${program.name} is not an executable, skipping PID check.\n`;
+          batContent += `    set "status_${index}=1"\n`;
+        }
+        batContent += `    echo ${program.name} status: !status_${index}!\n`;
+        batContent += `) else (\n`;
+        batContent += `    echo File not found: "${filePath}"\n`;
+        batContent += `    set "status_${index}=0"\n`;
+        batContent += `    echo ${program.name} status: !status_${index}!\n`;
+        batContent += `    timeout /t ${this.waitTime} /nobreak > nul\n`;
+        batContent += `)\n\n`;
       });
+
       batContent += '\necho All programs started.\npause\n';
 
-      const utf8Bom = '\uFEFF';
-      const blob = new Blob([utf8Bom + batContent], { type: 'text/plain;charset=utf-8' });
+      // 파일 생성 및 다운로드
+      const blob = new Blob([batContent], { type: 'text/plain;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
