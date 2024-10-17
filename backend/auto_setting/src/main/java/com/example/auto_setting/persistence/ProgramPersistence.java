@@ -57,9 +57,14 @@ public class ProgramPersistence {
         Integer pgmId = jdbcTemplate.queryForObject(pgmIdQuery, Integer.class);
 
         // INSERT 쿼리 작성 (PGM_ID, PGM_NM, EMP_NO, FILE_PATH, REG_YN, SYS_REG_DTM, SYS_UPD_DTM)
-        String sql = "INSERT INTO PGM_BASE (PGM_ID, PGM_NM, EMP_NO, FILE_PATH, REG_YN, SYS_REG_DTM, SYS_UPD_DTM) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?)";
-        jdbcTemplate.update(sql, pgmId, pgmNm, empNo, filePath, regYn, currentTimestamp, currentTimestamp);
+        try {
+            String sql = "INSERT INTO PGM_BASE (PGM_ID, PGM_NM, EMP_NO, FILE_PATH, REG_YN, SYS_REG_DTM, SYS_UPD_DTM) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)";
+            jdbcTemplate.update(sql, pgmId, pgmNm, empNo, filePath, regYn, currentTimestamp, currentTimestamp);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
     // 프로그램 수정
@@ -71,5 +76,33 @@ public class ProgramPersistence {
         // UPDATE 쿼리 작성
         String sql = "UPDATE PGM_BASE SET PGM_NM = ?, EMP_NO = ?, FILE_PATH = ?, SYS_UPD_DTM = ? WHERE PGM_ID = ?";
         jdbcTemplate.update(sql, pgmNm, empNo, filePath, currentTimestamp, pgmId);
+
+        // EMP_NO로 데이터가 있는지 확인
+        String checkQuery = "SELECT COUNT(*) FROM PGM_EXEC_BASE WHERE EMP_NO = ?";
+        Integer count = jdbcTemplate.queryForObject(checkQuery, Integer.class, empNo);
+
+        // PGM_ID 리스트 업데이트를 위한 SELECT
+        String execListQuery = "SELECT EXEC_LIST FROM PGM_EXEC_BASE WHERE EMP_NO = ?";
+        String execList = jdbcTemplate.queryForObject(execListQuery, String.class, empNo);
+
+        if (count == 0) {
+            // 데이터가 없으면 INSERT
+            String insertQuery = "INSERT INTO PGM_EXEC_BASE (EXEC_LIST_ID, EMP_NO, EXEC_LIST) VALUES (?, ?, ?)";
+            String newExecListId = generateExecListId(); // EXEC_LIST_ID 생성 로직
+            jdbcTemplate.update(insertQuery, newExecListId, empNo, pgmId); // 초기 EXEC_LIST는 pgmId로 시작
+        } else {
+            // 데이터가 있으면 UPDATE
+            String updatedExecList = execList + "," + pgmId; // 기존 리스트에 새로운 pgmId 추가
+            String updateQuery = "UPDATE PGM_EXEC_BASE SET EXEC_LIST = ? WHERE EMP_NO = ?";
+            jdbcTemplate.update(updateQuery, updatedExecList, empNo);
+        }
+    }
+
+    // EXEC_LIST_ID 생성 로직 (예시)
+    private String generateExecListId() {
+        String query = "SELECT COALESCE(MAX(EXEC_LIST_ID), 0) + 1 FROM PGM_EXEC_BASE";
+        String maxId = jdbcTemplate.queryForObject(query, String.class);
+
+        return maxId;
     }
 }
