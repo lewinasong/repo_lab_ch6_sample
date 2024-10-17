@@ -1,13 +1,12 @@
 <template>
   <div class="container">
     <h1>프로그램 목록</h1>
-    <button @click="showModal = true">모달 열기</button>
     
     <!-- 상단에 버튼 추가 -->
     <div class="button-container">
-      <button class="reg_button" @click="registerProgram">등록</button>
-      <button class="upd_button" @click="updateProgram" :disabled="!selectedProgram">수정</button>
-      <button class="del_button" @click="removeProgram" :disabled="!selectedProgram">해제</button>
+      <button class="reg_button" @click="openModal('register')">등록</button>
+      <button class="upd_button" @click="openModal('update')" :disabled="!selectedProgram">수정</button>
+      <button class="del_button" @click="openModal('remove')" :disabled="!selectedProgram">해제</button>
     </div>
 
     <table>
@@ -36,70 +35,80 @@
         </tr>
       </tbody>
     </table>
+    <ModalBase 
+      v-if="showModal" 
+      :modalType="modalType" 
+      :program="selectedProgram"
+      @close="showModal = false" 
+      @register="registerProgram" 
+      @update="updateProgram" 
+      @remove="removeProgram"
+    />
   </div>
-  <ModalSample v-if="showModal" @close="showModal = false" />
 </template>
 
 <script>
 import { ref } from 'vue';
-import ModalSample from './ModalSample.vue';
+import ModalBase from './ModalBase.vue';
 
 export default {
   components: {
-    ModalSample
+    ModalBase
   },
   setup() {
+    // 모달 상태
     const showModal = ref(false);
+    const modalType = ref('');
 
-    return {
-      showModal,
-    };
-  }, 
-  data() {
-    return {
-      // 등록된 프로그램 목록
-      programs: [
-        {
-          name: "SG Client",
-          filePath: "C:\\Users\\82103\\OneDrive\\SG Client.exe",
-          registerDate: "2024-09-27",
-          updateDate: "2024-09-27"
-        },
-        {
-          name: "Chakra",
-          filePath: "C:\\Program Files\\Chakra",
-          registerDate: "2024-09-01",
-          updateDate: "2024-09-01"
-        },
-        {
-          name: "NeoWorks",
-          filePath: "C:\\NeoWorks\\neo.exe",
-          registerDate: "2024-09-27",
-          updateDate: "2024-09-27"
-        },
-        {
-          name: "Slack",
-          filePath: "C:\\Users\\82103\\AppData\\Local\\slack\\app-4.40.128",
-          registerDate: "2024-09-27",
-          updateDate: "2024-09-27"
-        }
-      ],
-      // 단일 선택을 위한 변수
-      selectedProgram: null
-    };
-  },
-  methods: {
-    // 프로그램 경로에 한글이 포함되었는지 검사하는 메서드
-    containsKorean(text) {
+    // 프로그램 목록
+    const programs = ref([
+      {
+        name: "SG Client",
+        filePath: "C:\\Users\\82103\\OneDrive\\SG Client.exe",
+        registerDate: "2024-09-27",
+        updateDate: "2024-09-27"
+      },
+      {
+        name: "Chakra",
+        filePath: "C:\\Program Files\\Chakra",
+        registerDate: "2024-09-01",
+        updateDate: "2024-09-01"
+      },
+      {
+        name: "NeoWorks",
+        filePath: "C:\\NeoWorks\\neo.exe",
+        registerDate: "2024-09-27",
+        updateDate: "2024-09-27"
+      },
+      {
+        name: "Slack",
+        filePath: "C:\\Users\\82103\\AppData\\Local\\slack\\app-4.40.128",
+        registerDate: "2024-09-27",
+        updateDate: "2024-09-27"
+      }
+    ]);
+
+    // 단일 선택을 위한 변수
+    const selectedProgram = ref(null);
+
+    // 한글 포함 여부 검사 메서드
+    const containsKorean = (text) => {
       const koreanRegex = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/;
       return koreanRegex.test(text);
-    },
+    };
+
+    // 모달 열기 메서드
+    const openModal = (type) => {
+      modalType.value = type;
+      showModal.value = true;
+    };
+
     // 프로그램 등록 메서드
-    registerProgram() {
+    const registerProgram = () => {
       const name = prompt("프로그램명을 입력하세요");
       const filePath = prompt("실행파일 경로를 입력하세요");
 
-      if (this.containsKorean(filePath)) {
+      if (containsKorean(filePath)) {
         alert("실행파일경로는 영문 및 숫자만 가능합니다. 파일경로를 수정 후 재등록해주세요");
         return;
       }
@@ -110,40 +119,53 @@ export default {
         registerDate: new Date().toISOString().slice(0, 10),
         updateDate: new Date().toISOString().slice(0, 10)
       };
-      
+
       if (newProgram.name && newProgram.filePath) {
-        this.programs.push(newProgram);
+        programs.value.push(newProgram);
       }
-    },
+    };
+
     // 프로그램 수정 메서드
-    updateProgram() {
-      if (this.selectedProgram) {
-        const newName = prompt("새 프로그램명을 입력하세요", this.selectedProgram.name);
-        const newFilePath = prompt("새 실행파일 경로를 입력하세요", this.selectedProgram.filePath);
-        
-        if (this.containsKorean(newFilePath)) {
+    const updateProgram = () => {
+      if (selectedProgram.value) {
+        const newName = prompt("새 프로그램명을 입력하세요", selectedProgram.value.name);
+        const newFilePath = prompt("새 실행파일 경로를 입력하세요", selectedProgram.value.filePath);
+
+        if (containsKorean(newFilePath)) {
           alert("프로그램경로에 한글이 포함되어있습니다. 영문경로로 수정 후 재입력해주세요.");
           return;
         }
 
         if (newName && newFilePath) {
-          this.selectedProgram.name = newName;
-          this.selectedProgram.filePath = newFilePath;
-          this.selectedProgram.updateDate = new Date().toISOString().slice(0, 10);
+          selectedProgram.value.name = newName;
+          selectedProgram.value.filePath = newFilePath;
+          selectedProgram.value.updateDate = new Date().toISOString().slice(0, 10);
         }
       }
-    },
+    };
+
     // 프로그램 삭제 메서드
-    removeProgram() {
-      if (this.selectedProgram) {
-        // 사용자에게 해제 여부를 확인하는 메시지 추가
+    const removeProgram = () => {
+      if (selectedProgram.value) {
         const confirmDelete = confirm('선택한 프로그램을 해제하시겠습니까?');
         if (confirmDelete) {
-          this.programs = this.programs.filter(p => p !== this.selectedProgram);
-          this.selectedProgram = null;
+          programs.value = programs.value.filter(p => p !== selectedProgram.value);
+          selectedProgram.value = null;
         }
       }
-    }
+    };
+
+    return {
+      showModal,
+      modalType,
+      programs,
+      selectedProgram,
+      openModal,
+      registerProgram,
+      updateProgram,
+      removeProgram,
+      containsKorean
+    };
   }
 };
 </script>

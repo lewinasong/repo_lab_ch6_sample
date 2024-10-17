@@ -40,8 +40,8 @@
 
     <button @click="sortPrograms">변경후 프로그램 실행순서 확인</button>
 
-    <!-- 정렬된 프로그램 목록 표시 -->
-    <div v-if="sortedPrograms.length > 0">
+     <!-- 정렬된 프로그램 목록 표시 -->
+     <div v-if="sortedPrograms.length > 0">
       <h2>변경후 프로그램 실행순서</h2>
       <table class="fixed-table">
         <thead>
@@ -57,14 +57,26 @@
           </tr>
         </tbody>
       </table>
-      <!-- 저장 버튼 추가 -->
-      <button class="save_button" @click="confirmSave">저장</button>
+      <!-- 저장 버튼 클릭 시 모달 열기 -->
+      <button class="save_button" @click="openSaveModal">저장</button>
     </div>
+
+    <!-- 저장 확인 모달 -->
+    <ModalConfirm 
+      v-if="showSaveModal" 
+      @confirm="savePrograms" 
+      @close="showSaveModal = false" 
+    />
   </div>
 </template>
 
 <script>
+import ModalConfirm from './ModalConfirm.vue';
+
 export default {
+  components: {
+    ModalConfirm
+  },
   data() {
     return {
       programs: [
@@ -74,7 +86,8 @@ export default {
         { id: 4, name: "Slack", filePath: "C:\\Users\\82103\\AppData\\Local\\slack\\slack.exe", order: '' }
       ],
       sortedPrograms: [],
-      waitTime: 3 // 기본 실행 대기 시간
+      waitTime: 3, // 기본 실행 대기 시간
+      showSaveModal: false // 모달 상태
     };
   },
   methods: {
@@ -113,6 +126,15 @@ export default {
         .filter(program => program.order !== '' && parseInt(program.order) > 0)
         .sort((a, b) => parseInt(a.order) - parseInt(b.order));
     },
+    openSaveModal() {
+      // 저장 버튼 클릭 시 모달 열기
+      if (this.sortedPrograms.length === 0) {
+        alert('프로그램 순서를 먼저 확인해주세요.');
+        return;
+      }
+      this.showSaveModal = true;
+    },
+
     confirmSave() {
       if (this.waitTime < 3) {
         alert('실행대기시간은 3초이상 설정 가능합니다.');
