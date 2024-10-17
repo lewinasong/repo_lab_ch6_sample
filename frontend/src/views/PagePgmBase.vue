@@ -1,5 +1,10 @@
 <template>
   <div class="container">
+    <!-- 로그인 사용자 정보 -->
+    <div class="user-info">
+      <p>로그인 사용자: {{ user?.employeeNumber || "정보 없음" }}</p> <!-- 사용자 정보가 없을 때 "정보 없음" 출력 -->
+    </div>
+
     <h1>프로그램 목록</h1>
     
     <!-- 상단에 버튼 추가 -->
@@ -49,6 +54,7 @@
 
 <script>
 import { ref } from 'vue';
+import { useUserStore } from '@/stores/userStore'; // Pinia 스토어 가져오기
 import ModalBase from './ModalBase.vue';
 
 export default {
@@ -90,6 +96,10 @@ export default {
 
     // 단일 선택을 위한 변수
     const selectedProgram = ref(null);
+
+    // Pinia 스토어에서 로그인한 사용자 정보 가져오기
+    const userStore = useUserStore();
+    const user = userStore.user;
 
     // 한글 포함 여부 검사 메서드
     const containsKorean = (text) => {
@@ -164,16 +174,20 @@ export default {
       registerProgram,
       updateProgram,
       removeProgram,
-      containsKorean
+      containsKorean,
+      user // 로그인 사용자 정보
     };
   }
 };
 </script>
 
 <style scoped>
-@font-face {
-  font-family: 'KCCMurukmuruk';
-  src: url('@/fonts/KCCMurukmuruk.ttf') format('truetype');
+/* 로그인 사용자 정보를 상단에 표시하는 스타일 */
+.user-info {
+  text-align: right;
+  margin-bottom: 20px;
+  font-size: 16px;
+  font-weight: bold;
 }
 
 .container {  

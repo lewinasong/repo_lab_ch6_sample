@@ -1,5 +1,10 @@
 <template>
   <div class="container">
+    <!-- 로그인 사용자 정보 -->
+    <div class="user-info">
+      <p>로그인 사용자: {{ user?.employeeNumber || "정보 없음" }}</p> <!-- 사용자 정보가 없을 때 "정보 없음" 출력 -->
+    </div>
+
     <h1>프로그램 실행순서 설정</h1>
 
     <!-- 실행 대기 시간 입력 필드 추가 -->
@@ -40,8 +45,8 @@
 
     <button @click="sortPrograms">변경후 프로그램 실행순서 확인</button>
 
-     <!-- 정렬된 프로그램 목록 표시 -->
-     <div v-if="sortedPrograms.length > 0">
+    <!-- 정렬된 프로그램 목록 표시 -->
+    <div v-if="sortedPrograms.length > 0">
       <h2>변경후 프로그램 실행순서</h2>
       <table class="fixed-table">
         <thead>
@@ -72,6 +77,7 @@
 
 <script>
 import ModalConfirm from './ModalConfirm.vue';
+import { useUserStore } from '@/stores/userStore'; // Pinia 스토어 가져오기
 
 export default {
   components: {
@@ -89,6 +95,12 @@ export default {
       waitTime: 3, // 기본 실행 대기 시간
       showSaveModal: false // 모달 상태
     };
+  },
+  computed: {
+    user() {
+      const userStore = useUserStore();
+      return userStore.user; // Pinia에서 로그인된 사용자 정보 가져오기
+    }
   },
   methods: {
     validateOrder(program) {
@@ -127,26 +139,11 @@ export default {
         .sort((a, b) => parseInt(a.order) - parseInt(b.order));
     },
     openSaveModal() {
-      // 저장 버튼 클릭 시 모달 열기
       if (this.sortedPrograms.length === 0) {
         alert('프로그램 순서를 먼저 확인해주세요.');
         return;
       }
       this.showSaveModal = true;
-    },
-
-    confirmSave() {
-      if (this.waitTime < 3) {
-        alert('실행대기시간은 3초이상 설정 가능합니다.');
-        return;
-      }
-
-      const confirmation = confirm('설정한 순서로 실행파일이 생성됩니다. 계속하시겠습니까?');
-      if (confirmation) {
-        this.savePrograms();
-      } else {
-        alert('작업이 취소되었습니다.');
-      }
     },
     savePrograms() {
       let batContent = '@echo off\nsetlocal EnableDelayedExpansion\n';
@@ -156,7 +153,6 @@ export default {
         const fileName = filePath.split("\\").pop();
         const fileExtension = fileName.split(".").pop();
 
-        // 파일 존재 여부 확인 및 프로그램 실행
         batContent += `if exist "${filePath}" (\n`;
         batContent += `    start "" "${filePath}"\n`;
         batContent += `    timeout /t ${this.waitTime} /nobreak > nul\n`;
@@ -186,7 +182,6 @@ export default {
 
       batContent += '\necho All programs started.\npause\n';
 
-      // 파일 생성 및 다운로드
       const blob = new Blob([batContent], { type: 'text/plain;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -204,9 +199,12 @@ export default {
 </script>
 
 <style scoped>
-@font-face {
-  font-family: 'KCCMurukmuruk';
-  src: url('@/fonts/KCCMurukmuruk.ttf') format('truetype');
+/* 로그인 사용자 정보를 상단에 표시하는 스타일 */
+.user-info {
+  text-align: right;
+  margin-bottom: 20px;
+  font-size: 16px;
+  font-weight: bold;
 }
 
 .container {
@@ -224,11 +222,11 @@ h1 {
 }
 
 .delay-container label {
-  margin-right: 20px; /* 라벨과 입력창 사이의 간격 */
+  margin-right: 20px;
 }
 
 .wait-time-input {
-  width: 60px; /* 가로 길이 조정 */
+  width: 60px;
   padding: 5px;
   text-align: center;
 }
@@ -259,26 +257,22 @@ input {
 .header-cell {
   background-color: #fcf4c0;
   color: black;
-  font-family: 'KCCMurukmuruk', sans-serif;
 }
 
 .header-cell2 {
   background-color: #cefbc9;
   color: black;
-  font-family: 'KCCMurukmuruk', sans-serif;
 }
 
 button {
   margin-top: 20px;
   padding: 10px 20px;
   font-size: 16px;
-  font-family: 'KCCMurukmuruk', sans-serif;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .save_button {
   background-color: #FFD700;
-  font-family: 'KCCMurukmuruk', sans-serif;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -286,9 +280,5 @@ h2 {
   margin-top: 30px;
   font-size: 30px;
   padding: 20px 0;
-}
-
-.sorted-table {
-  margin-top: 20px;
 }
 </style>

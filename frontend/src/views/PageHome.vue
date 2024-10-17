@@ -1,6 +1,11 @@
 <!-- PageHome.vue -->
 <template>
   <div class="container">
+    <!-- 상단에 로그인 사용자 정보 표시 -->
+    <div class="user-info">
+      <p>로그인 사용자: {{ user?.employeeNumber || "정보 없음" }}</p> <!-- 사용자 정보가 없을 때 "정보 없음" 출력 -->
+    </div>
+
     <h1>수행 프로그램 목록</h1>
     <div class="table-header">
       <span class="execution-date">실행 일시: {{ executionDate }}</span> <!-- 실행 일시 우측 정렬 -->
@@ -27,10 +32,20 @@
 </template>
 
 <script>
+import { useUserStore } from '@/stores/userStore'; // 사용자 정보를 Pinia 또는 Vuex에서 가져옴
+
 export default {
+  setup() {
+    const userStore = useUserStore(); // Pinia에서 사용자 정보 가져오기
+    const user = userStore.user; // 사용자 정보
+
+    return {
+      user,
+    };
+  },
   data() {
     return {
-      executionDate: '2024-10-11 14:30:00', // 예시로 하드코딩된 실행 일시
+      executionDate: '2024-10-11 14:30:00', // 예시 실행 일시
       programList: [
         { name: '프로그램 A', success: true },
         { name: '프로그램 B', success: false },
@@ -38,13 +53,18 @@ export default {
       ],
     };
   },
-  mounted() {
-    // 여기에 API 호출 로직을 추가하여 실행 일시 데이터를 가져올 수 있습니다.
-  },
 };
 </script>
 
 <style scoped>
+/* 사용자 정보를 우측 상단에 고정하는 스타일 */
+.user-info {
+  text-align: right;
+  margin-bottom: 20px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
 @font-face {
   font-family: 'KCCMurukmuruk';
   src: url('@/fonts/KCCMurukmuruk.ttf') format('truetype');
