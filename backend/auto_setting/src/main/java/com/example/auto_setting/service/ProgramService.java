@@ -35,4 +35,15 @@ public class ProgramService {
             throw new RuntimeException("UPDATE operation failed: " + e.getMessage());
         }
     }
+
+    // 프로그램 삭제 (REG_YN을 0으로 업데이트)
+    public void deleteProgram(String pgmId) {
+        try {
+            // persistence 레이어 호출
+            programPersistence.deleteProgram(pgmId);
+        } catch (DataAccessException e) {
+            throw new RuntimeException("Delete operation failed: " + e.getMessage());
+        }
+    }
+
 }

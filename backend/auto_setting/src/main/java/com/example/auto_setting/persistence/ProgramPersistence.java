@@ -1,13 +1,16 @@
 package com.example.auto_setting.persistence;
 
 import com.example.auto_setting.service.ProgramDto;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Component;
 import org.springframework.jdbc.core.JdbcTemplate;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @Component
 public class ProgramPersistence {
 
@@ -27,13 +30,13 @@ public class ProgramPersistence {
 
         // 쿼리 결과를 ProgramDto 객체로 매핑
         List<ProgramDto> result = jdbcTemplate.query(sql, (rs, rowNum) -> {
-            ProgramDto dto = new ProgramDto();
-            dto.setPgmId(rs.getString("PGM_ID"));
-            dto.setPgmNm(rs.getString("PGM_NM"));
-            dto.setFilePath(rs.getString("FILE_PATH"));
-            dto.setSysRegDtm(rs.getTimestamp("SYS_REG_DTM").toLocalDateTime());
-            dto.setSysUpdDtm(rs.getTimestamp("SYS_UPD_DTM").toLocalDateTime());
-            return dto;
+            return ProgramDto.builder()
+                    .pgmId(rs.getString("PGM_ID"))
+                    .pgmNm(rs.getString("PGM_NM"))
+                    .filePath(rs.getString("FILE_PATH"))
+                    .sysRegDtm(rs.getTimestamp("SYS_REG_DTM").toLocalDateTime())
+                    .sysUpdDtm(rs.getTimestamp("SYS_UPD_DTM").toLocalDateTime())
+                    .build();
         }, empNo);
 
         // 결과가 없으면 예외 처리
@@ -50,19 +53,24 @@ public class ProgramPersistence {
         LocalDateTime now = LocalDateTime.now();
         Timestamp currentTimestamp = Timestamp.valueOf(now);
 
-        System.out.println("tst");
+        System.out.println("filePath");
+        //log.info("Hi {}", now);
 
         // PGM_ID의 최대값에 1을 더해 새로운 ID 생성
         String pgmIdQuery = "SELECT COALESCE(MAX(PGM_ID), 0) + 1 FROM PGM_BASE";
         Integer pgmId = jdbcTemplate.queryForObject(pgmIdQuery, Integer.class);
+        // pgmIdString = pgmId.toString();
 
         // INSERT 쿼리 작성 (PGM_ID, PGM_NM, EMP_NO, FILE_PATH, REG_YN, SYS_REG_DTM, SYS_UPD_DTM)
         try {
             String sql = "INSERT INTO PGM_BASE (PGM_ID, PGM_NM, EMP_NO, FILE_PATH, REG_YN, SYS_REG_DTM, SYS_UPD_DTM) " +
                     "VALUES (?, ?, ?, ?, ?, ?, ?)";
+
             jdbcTemplate.update(sql, pgmId, pgmNm, empNo, filePath, regYn, currentTimestamp, currentTimestamp);
         } catch (Exception e) {
-            e.printStackTrace();
+            //throw new RuntimeException(e);
+            log.error("Error while saving program: ", e);
+            throw new RuntimeException(e);
         }
 
     }
@@ -73,10 +81,18 @@ public class ProgramPersistence {
         LocalDateTime now = LocalDateTime.now();
         Timestamp currentTimestamp = Timestamp.valueOf(now);
 
+        try{
         // UPDATE 쿼리 작성
-        String sql = "UPDATE PGM_BASE SET PGM_NM = ?, EMP_NO = ?, FILE_PATH = ?, SYS_UPD_DTM = ? WHERE PGM_ID = ?";
-        jdbcTemplate.update(sql, pgmNm, empNo, filePath, currentTimestamp, pgmId);
+        String sql = "UPDATE PGM_BASE SET PGM_NM = ?, FILE_PATH = ?, SYS_UPD_DTM = ? WHERE PGM_ID = ? AND EMP_NO = ?";
+        jdbcTemplate.update(sql, pgmNm, filePath, currentTimestamp, pgmId, empNo);
+        } catch (Exception e) {
+            //throw new RuntimeException(e);
+            log.error("Error while saving program: ", e);
+            throw new RuntimeException(e);
+        }
 
+
+        /*
         // EMP_NO로 데이터가 있는지 확인
         String checkQuery = "SELECT COUNT(*) FROM PGM_EXEC_BASE WHERE EMP_NO = ?";
         Integer count = jdbcTemplate.queryForObject(checkQuery, Integer.class, empNo);
@@ -96,6 +112,8 @@ public class ProgramPersistence {
             String updateQuery = "UPDATE PGM_EXEC_BASE SET EXEC_LIST = ? WHERE EMP_NO = ?";
             jdbcTemplate.update(updateQuery, updatedExecList, empNo);
         }
+        */
+
     }
 
     // EXEC_LIST_ID 생성 로직 (예시)
@@ -105,4 +123,18 @@ public class ProgramPersistence {
 
         return maxId;
     }
+
+    // 프로그램 삭제 (REG_YN을 0으로 업데이트)
+    public void deleteProgram(String pgmId) {
+        String sql = "UPDATE PGM_BASE SET REG_YN = 0, SYS_UPD_DTM = NOW() WHERE PGM_ID = ?";
+        try {
+            jdbcTemplate.update(sql, pgmId);
+        } catch (DataAccessException e) {
+            throw new RuntimeException("Failed to update REG_YN: " + e.getMessage());
+        }
+    }
+
+
+
+
 }

@@ -14,24 +14,22 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/program")
 public class ProgramController {
+
     private final ProgramService programService;
 
-    public ProgramController(ProgramService programService) {
-        this.programService = programService;
-    }
-
     // 프로그램 조회
-    @GetMapping("PagePgmBase/{empNo}")
+    @GetMapping("/PagePgmBase/{empNo}")
     public ResponseEntity<?> getProgramByEmpNo(@PathVariable String empNo) {
         try {
             // 서비스 호출하여 데이터 조회
             List<ProgramDto> programs = programService.getProgramByEmpNo(empNo);
             return new ResponseEntity<>(programs, HttpStatus.OK);
         } catch (RuntimeException e) {
-            // 예외 발생 시 404 반환
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+            // 예외 발생 시 500 반환
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -55,7 +53,7 @@ public class ProgramController {
             programService.saveProgram(pgmNm, empNo, filePath, regYn);
             return new ResponseEntity<>("Program registered successfully", HttpStatus.OK);
         } catch (RuntimeException e) {//
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -77,49 +75,22 @@ public class ProgramController {
             programService.updateProgram(pgmId, pgmNm, empNo, filePath);
             return new ResponseEntity<>("Program updated successfully", HttpStatus.OK);
         } catch (RuntimeException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-/*
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class ProgramDto {
-        private String pgmId;
-        private String pgmNm;
-        private String empNo;
-        private String filePath;
-        private LocalDateTime sysRegDtm;
-        private LocalDateTime sysUpdDtm;
+    // 프로그램 삭제 (REG_YN을 0으로 업데이트)
+    @PostMapping("/delete")
+    public ResponseEntity<?> deleteProgram(@RequestBody ProgramDto programDto) {
+        try {
+            String pgmId = programDto.getPgmId();
 
-        // Getters and Setters
-        public String getPgmId() { return pgmId; }
-
-        public void setPgmId(String pgmId) { this.pgmId = pgmId; }
-
-        public String getPgmNm() {
-            return pgmNm;
+            // 서비스 호출하여 REG_YN을 0으로 업데이트
+            System.out.println(pgmId);
+            programService.deleteProgram(pgmId);
+            return new ResponseEntity<>("Program deleted successfully", HttpStatus.OK);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
-        public void setPgmNm(String pgmNm) {
-            this.pgmNm = pgmNm;
-        }
-
-        public String getEmpNo() {
-            return empNo;
-        }
-
-        public void setEmpNo(String empNo) {
-            this.empNo = empNo;
-        }
-
-        public String getFilePath() {
-            return filePath;
-        }
-
-        public void setFilePath(String filePath) {this.filePath = filePath; }
     }
-*/
-
 }
