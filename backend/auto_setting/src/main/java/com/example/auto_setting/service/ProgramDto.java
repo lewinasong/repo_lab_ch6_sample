@@ -18,6 +18,8 @@ public class ProgramDto {
     private String filePath;
     private LocalDateTime sysRegDtm;
     private LocalDateTime sysUpdDtm;
+    private Integer scssYn;
+
 
     // Getters and Setters
     /*
