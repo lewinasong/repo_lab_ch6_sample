@@ -5,11 +5,8 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
@@ -59,5 +56,17 @@ public class ProgramListJdbcRepository implements ProgramListRepository {
     public void deleteByEmpNo(@NonNull final String empNo) {
         final String sql = "DELETE FROM PGM_EXEC_BASE WHERE EMP_NO = ?";
         jdbcTemplate.update(sql, empNo);
+    }
+
+    // Program List와 Program Name을 조합하여 반환하는 메서드
+    public List<Map<String, Object>> findProgramListWithNameByEmpNo(@NonNull String empNo) {
+        // SQL 쿼리로 Program List와 Program Name을 조회
+        String sql = "SELECT pb.PGM_NM, pl.EXEC_LIST " +
+                     "FROM PGM_EXEC_BASE pl " +
+                     "JOIN PGM_BASE pb ON FIND_IN_SET(pb.PGM_ID, pl.EXEC_LIST) > 0 " +
+                     "WHERE pl.EMP_NO = ?";
+        
+        // SQL 쿼리 실행 및 결과 반환
+        return jdbcTemplate.queryForList(sql, empNo);
     }
 }
