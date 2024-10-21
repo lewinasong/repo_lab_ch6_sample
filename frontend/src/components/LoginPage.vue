@@ -20,6 +20,7 @@
 
 <script>
 import { useUserStore } from '@/stores/userStore'; // Pinia 스토어 가져오기
+import axios from 'axios'; // axios를 사용하여 API 호출
 
 export default {
   name: "LoginPage",
@@ -30,21 +31,32 @@ export default {
     };
   },
   methods: {
-    handleSubmit() {
+    async handleSubmit() {
       if (this.employeeNumber.length !== 7) {
         this.errorMessage = "행번을 확인해주세요"; // 에러 메시지
       } else {
         this.errorMessage = ""; // 에러 메시지 초기화
-        const userStore = useUserStore();
-        
-        // Pinia 스토어에 사용자 정보 저장
-        userStore.setUser({
-          employeeNumber: this.employeeNumber, // 사용자 행번
-          name: "홍길동" // 이 부분은 실제 데이터로 수정
-        });
 
-        // 로그인 후 메인 페이지로 이동
-        this.$router.push({ name: 'PageHome' });
+        try {
+          // API 요청
+          const response = await axios.post('/api/login', {
+            employeeNumber: this.employeeNumber,
+          });
+
+          // 성공적으로 응답 받으면 Pinia 스토어에 사용자 정보 저장
+          const userStore = useUserStore();
+          userStore.setUser({
+            employeeNumber: response.data.employeeNumber,
+            name: response.data.name, // 서버에서 받은 이름
+          });
+
+          // 로그인 후 메인 페이지로 이동
+          this.$router.push({ name: 'PageHome' });
+
+        } catch (error) {
+          // 에러 처리
+          this.errorMessage = "로그인에 실패했습니다. 다시 시도해주세요.";
+        }
       }
     },
   },
