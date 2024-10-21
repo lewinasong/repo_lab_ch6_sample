@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/program-list")
@@ -56,6 +57,20 @@ public class ProgramListController {
             return new ResponseEntity<>("Program list deleted successfully", HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // 직원 번호로 Program List + Program Name 조회 (GET)
+    @GetMapping("/with-names/{empNo}")
+    public ResponseEntity<List<Map<String, Object>>> getProgramListWithNameByEmpNo(@PathVariable String empNo) {
+        try {
+            List<Map<String, Object>> programListWithNames = programListService.getProgramListWithNameByEmpNo(empNo);
+            if (programListWithNames.isEmpty()) {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+            return new ResponseEntity<>(programListWithNames, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }
