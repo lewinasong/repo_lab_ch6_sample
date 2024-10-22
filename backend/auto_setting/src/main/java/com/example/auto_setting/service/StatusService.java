@@ -14,9 +14,9 @@ public class StatusService {
     private final StatusPersistence statusPersistence;
 
     //프로그램 실행 여부 적재
-    public void updateProgramStatus(String pgmId, Integer scssYn) {
+    public void insertProgramStatus(String empNo, String pgmId, Integer scssYn) {
         try {
-            statusPersistence.updateStatus(pgmId, scssYn);
+            statusPersistence.insertStatus(empNo, pgmId, scssYn);
         } catch (DataAccessException e) {
             throw new RuntimeException("INSERT operation failed: " + e.getMessage());
         }

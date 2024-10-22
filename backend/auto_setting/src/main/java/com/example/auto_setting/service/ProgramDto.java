@@ -13,12 +13,14 @@ import java.time.LocalDateTime;
 @Builder
 public class ProgramDto {
     private String pgmId;
+    private String histId;
     private String pgmNm;
     private String empNo;
     private String filePath;
     private LocalDateTime sysRegDtm;
     private LocalDateTime sysUpdDtm;
     private Integer scssYn;
+
 
 
     // Getters and Setters
