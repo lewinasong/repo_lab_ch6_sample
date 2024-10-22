@@ -19,30 +19,63 @@
 </template>
 
 <script>
+import { useUserStore } from '@/stores/userStore'; // Pinia 스토어 가져오기
+import axios from 'axios'; // axios를 사용하여 API 호출
+
 export default {
   name: "LoginPage",
   data() {
     return {
-      employeeNumber: "",
-      errorMessage: "", // 에러 메시지 저장을 위한 데이터
+      employeeNumber: "", // 입력된 행번을 저장
+      errorMessage: "", // 에러 메시지
     };
   },
   methods: {
-    handleSubmit() {
-      if (this.employeeNumber.length !== 7) { // 행번이 7자리가 아닐 경우
-        this.errorMessage = "행번을 확인해주세요"; // 에러 메시지 설정
+    async handleSubmit() {
+      if (this.employeeNumber.length !== 7) {
+        this.errorMessage = "행번을 확인해주세요"; // 에러 메시지
       } else {
         this.errorMessage = ""; // 에러 메시지 초기화
-        console.log("Employee Number:", this.employeeNumber);
-        // 행번 확인 후 로그인 성공 시 메인 페이지로 이동
-        this.$router.push({ name: 'PageHome' });
+
+        try {
+          // API 요청
+          const response = await axios.post('/api/login', {
+            employeeNumber: this.employeeNumber,
+          });
+
+          // 성공적으로 응답 받으면 Pinia 스토어에 사용자 정보 저장
+          const userStore = useUserStore();
+          userStore.setUser({
+            employeeNumber: response.data.employeeNumber,
+            name: response.data.name, // 서버에서 받은 이름
+          });
+
+          // 로그인 후 메인 페이지로 이동
+          this.$router.push({ name: 'PageHome' });
+
+        } catch (error) {
+          // 에러 처리
+          this.errorMessage = "로그인에 실패했습니다. 다시 시도해주세요.";
+        }
       }
     },
   },
 };
 </script>
 
+
 <style scoped>
+/* 사용자 정보를 우측 상단에 고정하는 스타일 */
+.user-info {
+  position: fixed; /* 화면에 고정 */
+  top: 10px; /* 상단에서 10px 떨어진 위치 */
+  right: 20px; /* 우측에서 20px 떨어진 위치 */
+  background-color: #f4f4f4; /* 배경색 설정 */
+  padding: 10px; /* 여백 설정 */
+  border-radius: 5px; /* 모서리 둥글게 설정 */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* 약간의 그림자 효과 */
+  font-size: 14px; /* 폰트 크기 설정 */
+}
 /* 커스텀 폰트 설정 */
 @font-face {
   font-family: 'KCCMurukmuruk'; /* 커스텀 폰트의 이름 정의 */
