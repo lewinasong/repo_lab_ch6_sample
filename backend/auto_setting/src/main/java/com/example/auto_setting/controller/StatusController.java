@@ -22,16 +22,17 @@ public class StatusController {
     private final StatusService statusService;
 
     //프로그램 실행 여부 적재
-    @PostMapping("/updateStatus")
-    public ResponseEntity<?> updateProgramStatus(@RequestBody ProgramDto programDto) {
+    @PostMapping("/insertStatus")
+    public ResponseEntity<?> insertProgramStatus(@RequestBody ProgramDto programDto) {
         try {
-            String pgmId = programDto.getPgmId();  // 프로그램 이름
+            String empNo = programDto.getEmpNo();  // 직원 번호
+            String pgmId = programDto.getPgmId();  // 프로그램 ID
             Integer scssYn = programDto.getScssYn();     // 상태값 (0 또는 1)
 
             // 서비스 호출하여 상태 업데이트 처리
-            statusService.updateProgramStatus(pgmId, scssYn);
+            statusService.insertProgramStatus(empNo, pgmId, scssYn);
 
-            return new ResponseEntity<>("Status updated successfully", HttpStatus.OK);
+            return new ResponseEntity<>("Status inserted successfully", HttpStatus.OK);
         } catch (RuntimeException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
