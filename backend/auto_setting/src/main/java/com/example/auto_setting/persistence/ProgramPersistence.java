@@ -24,7 +24,7 @@ public class ProgramPersistence {
     // 프로그램 조회
     public List<ProgramDto> getProgramByEmpNo(String empNo) {
         // SELECT 쿼리 작성
-        String sql = "SELECT PGM_ID, PGM_NM, FILE_PATH, SYS_REG_DTM, SYS_UPD_DTM " +
+        String sql = "SELECT PGM_ID, PGM_NM, FILE_PATH, SLEEP_TIME, SYS_REG_DTM, SYS_UPD_DTM " +
                 "FROM PGM_BASE " +
                 "WHERE EMP_NO = ? AND REG_YN = '1'";
 
