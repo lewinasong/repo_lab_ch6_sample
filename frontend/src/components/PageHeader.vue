@@ -30,10 +30,17 @@ export default {
 header {
   background-image: url('@/assets/upimage.jpg');
   background-size: cover;
+  background-repeat: no-repeat;
   background-position: center;
   padding: 20px;
   transition: height 0.3s ease;
-  position: relative; /* 자식 요소의 절대 위치 조정을 위해 relative로 설정 */
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
 }
 
 /* 홈 경로일 때 헤더 높이를 더 크게 설정 */
@@ -42,9 +49,7 @@ header {
 }
 
 .system-name {
-  text-align: left;
-  padding: 20px;
-  font-size: 20px;
+  font-size: clamp(16px, 4vw, 30px);
   color: #0000CD;
   text-shadow: 2px 2px 4px #aaa;
   font-family: 'KCCMurukmuruk', sans-serif;
@@ -53,23 +58,31 @@ header {
 
 /* 로그인 링크를 우측 상단에 배치 */
 .login-link {
-  position: absolute; /* 부모 요소에 상대적인 절대 위치 */
-  top: 20px; /* 상단에서 20px 아래 */
-  right: 20px; /* 우측에서 20px 왼쪽 */
-  font-size: 16px;
+  position: absolute;
+  top: 20px;
+  right: 40px; /* 오른쪽에서의 간격을 넓혀 텍스트가 잘리지 않도록 함 */
+  font-size: clamp(12px, 2.5vw, 18px);
   font-family: 'KCCMurukmuruk', sans-serif;
+  max-width: 200px; /* 텍스트가 줄어들지 않도록 최대 너비 조정 */
+  padding: 5px;
+  white-space: nowrap; /* 텍스트 줄바꿈 방지 */
+  overflow: hidden; /* 텍스트가 잘리지 않도록 함 */
+  text-overflow: ellipsis; /* 텍스트가 너무 길 경우 생략 기호 처리 */
 }
 
 .header {
-  justify-content: space-between;
-  font-size: 25px;
+  display: flex;
+  justify-content: center; /* 요소들을 중앙에 배치 */
+  align-items: center;
+  gap: 20px; /* 요소들 간의 간격을 적절하게 조정 */
+  font-size: clamp(16px, 3vw, 25px);
   font-family: 'KCCMurukmuruk', sans-serif; 
-  width: 60%;
+  width: 100%;
   margin: 0 auto;
 }
 
 .separator {
-  margin: 0 50px;
+  margin: 0 10px; /* 링크 사이의 간격을 줄여서 간격을 좁게 만듦 */
 }
 
 /* 반짝이는 효과 애니메이션 */

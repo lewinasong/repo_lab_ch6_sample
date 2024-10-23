@@ -2,23 +2,10 @@
   <div class="container">
     <!-- 로그인 사용자 정보 -->
     <div class="user-info">
-      <p>로그인 사용자: {{ user?.employeeNumber || "정보 없음" }}</p> <!-- 사용자 정보가 없을 때 "정보 없음" 출력 -->
+      <p>로그인 사용자: {{ user?.employeeNumber || "정보 없음" }}</p>
     </div>
 
     <h1>프로그램 실행순서 설정</h1>
-
-    <!-- 실행 대기 시간 입력 필드 -->
-    <div class="delay-container">
-      <label for="wait-time">실행 대기 시간 (초):</label>
-      <input
-        type="text" 
-        id="wait-time"
-        v-model="waitTime"
-        placeholder="예: 3"
-        min="0"
-        class="wait-time-input"
-      />
-    </div>
 
     <!-- 프로그램 순서 입력 폼 -->
     <table class="fixed-table">
@@ -91,7 +78,6 @@ export default {
     return {
       programs: [], // API에서 받아올 프로그램 목록
       sortedPrograms: [], // 사용자가 정렬한 프로그램 목록
-      waitTime: 3, // 기본 실행 대기 시간
       showSaveModal: false, // 모달 상태
     };
   },
@@ -165,22 +151,6 @@ export default {
       }
       this.showSaveModal = true; // 모달 열기
     },
-    // 프로그램 순서 및 대기 시간을 서버로 저장하는 메서드
-    async saveProgramsToServer() {
-      try {
-        const sortedProgramData = this.sortedPrograms.map((program, index) => ({
-          id: program.id,
-          order: index + 1,
-          waitTime: this.waitTime,
-        }));
-
-        await axios.post('/api/save-program-order', { programs: sortedProgramData }); // 서버에 데이터 전송
-        alert('프로그램 순서와 대기 시간이 서버에 성공적으로 저장되었습니다.');
-      } catch (error) {
-        console.error('프로그램 순서 저장 중 에러 발생:', error); // 에러 처리
-        alert('프로그램 순서 저장 중 에러가 발생했습니다.');
-      }
-    },
     // 프로그램을 배치 파일로 저장하는 메서드
     savePrograms() {
       let batContent = '@echo off\nsetlocal EnableDelayedExpansion\n';
@@ -192,7 +162,6 @@ export default {
 
         batContent += `if exist "${filePath}" (\n`;
         batContent += `    start "" "${filePath}"\n`;
-        batContent += `    timeout /t ${this.waitTime} /nobreak > nul\n`;
 
         if (fileExtension === "exe") {
           batContent += `    for /f "tokens=2 delims=," %%i in ('tasklist /FI "IMAGENAME eq ${fileName}" /FO CSV ^| findstr /I "${fileName}"') do (\n`;
@@ -212,8 +181,6 @@ export default {
         batContent += `) else (\n`;
         batContent += `    echo File not found: "${filePath}"\n`;
         batContent += `    set "status_${index}=0"\n`;
-        batContent += `    echo ${program.name} status: !status_${index}!\n`;
-        batContent += `    timeout /t ${this.waitTime} /nobreak > nul\n`;
         batContent += `)\n\n`;
       });
 
@@ -256,16 +223,6 @@ h1 {
   text-align: center;
   font-size: 30px;
   padding: 20px 0;
-}
-
-.delay-container label {
-  margin-right: 20px;
-}
-
-.wait-time-input {
-  width: 60px;
-  padding: 5px;
-  text-align: center;
 }
 
 table {
