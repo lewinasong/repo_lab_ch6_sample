@@ -41,9 +41,10 @@ public class ProgramListJdbcRepository implements ProgramListRepository {
     }
 
     @Override
-    public void create(@NonNull final String empNo, @NonNull final String programIdList) {
+    public Long create(@NonNull final String empNo, @NonNull final String programIdList) {
         final String sql = "INSERT INTO PGM_EXEC_BASE (EMP_NO, EXEC_LIST) VALUES (?, ?)";
         jdbcTemplate.update(sql, empNo, programIdList);
+        return jdbcTemplate.queryForObject("SELECT LAST_INSERT_ID()", Long.class);
     }
 
     @Override
