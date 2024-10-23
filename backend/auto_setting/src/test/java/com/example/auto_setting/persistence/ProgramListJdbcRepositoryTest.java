@@ -21,7 +21,8 @@ class ProgramListJdbcRepositoryTest {
     public void test() {
         String empNo = "1234567";
         String programIdList = "1,2,3";
-        programListJdbcRepository.create(empNo, programIdList);
+        Long generatedId = programListJdbcRepository.create(empNo, programIdList);
+        System.out.println("generatedId = " + generatedId);
 
         ProgramList programList = programListJdbcRepository.findByEmpNo(empNo);
         assertThat(programList.getProgramIdList()).isEqualTo(programIdList);
