@@ -6,11 +6,12 @@ CREATE TABLE EMP_INFO_BASE (
                                SYS_UPD_DTM DATETIME NOT NULL
 );
 CREATE TABLE PGM_BASE (
-                          PGM_ID VARCHAR(50) PRIMARY KEY NOT NULL,
+                          PGM_ID BIGINT PRIMARY KEY NOT NULL AUTO_INCREMENT,
                           PGM_NM VARCHAR(100) NOT NULL,
                           EMP_NO VARCHAR(7) NOT NULL,
                           FILE_PATH VARCHAR(2000) NOT NULL,
                           REG_YN INT(1) NOT NULL,
+                          SLEEP_TIME INT(100) NOT NULL,
                           SYS_REG_DTM DATETIME NOT NULL,
                           SYS_UPD_DTM DATETIME NOT NULL
 );

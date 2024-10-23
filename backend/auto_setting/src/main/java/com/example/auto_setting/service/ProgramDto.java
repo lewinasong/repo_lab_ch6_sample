@@ -12,44 +12,13 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Builder
 public class ProgramDto {
-    private String pgmId;
-    private String histId;
+    private Long pgmId;
     private String pgmNm;
     private String empNo;
     private String filePath;
+    private Integer sleepTime;
     private LocalDateTime sysRegDtm;
     private LocalDateTime sysUpdDtm;
     private Integer scssYn;
 
-
-
-    // Getters and Setters
-    /*
-    public String getPgmId() { return pgmId; }
-
-    public void setPgmId(String pgmId) { this.pgmId = pgmId; }
-
-    public String getPgmNm() {
-        return pgmNm;
-    }
-
-    public void setPgmNm(String pgmNm) {
-        this.pgmNm = pgmNm;
-    }
-
-    public String getEmpNo() {
-        return empNo;
-    }
-
-    public void setEmpNo(String empNo) {
-        this.empNo = empNo;
-    }
-
-    public String getFilePath() {
-        return filePath;
-    }
-
-    public void setFilePath(String filePath) {this.filePath = filePath; }
-
-     */
 }

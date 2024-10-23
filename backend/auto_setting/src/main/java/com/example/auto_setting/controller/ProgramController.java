@@ -33,9 +33,6 @@ public class ProgramController {
         }
     }
 
-
-
-
     //프로그램 등록
     @PostMapping("/register")
     public ResponseEntity<?> InsertProgram(@RequestBody ProgramDto programDto){
@@ -44,13 +41,14 @@ public class ProgramController {
             String empNo = programDto.getEmpNo();
             String filePath = programDto.getFilePath();
             Integer regYn = 1; //등록시 1, 해제시 0
+            Integer sleepTime = programDto.getSleepTime();
 
             System.out.println(pgmNm);
             System.out.println(empNo);
             System.out.println(filePath);
 
             // 서비스 호출하여 업데이트 처리
-            programService.saveProgram(pgmNm, empNo, filePath, regYn);
+            programService.saveProgram(pgmNm, empNo, filePath, regYn, sleepTime);
             return new ResponseEntity<>("Program registered successfully", HttpStatus.OK);
         } catch (RuntimeException e) {//
             return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -61,10 +59,11 @@ public class ProgramController {
     @PostMapping("/modify")
     public ResponseEntity<?> UpdateProgram(@RequestBody ProgramDto programDto){
         try{
-            String pgmId = programDto.getPgmId();
+            Long pgmId = programDto.getPgmId();
             String pgmNm = programDto.getPgmNm();
             String empNo = programDto.getEmpNo();
             String filePath = programDto.getFilePath();
+            Integer sleepTime = programDto.getSleepTime();
 
             System.out.println(pgmId);
             System.out.println(pgmNm);
@@ -72,7 +71,7 @@ public class ProgramController {
             System.out.println(filePath);
 
             // 서비스 호출하여 업데이트 처리
-            programService.updateProgram(pgmId, pgmNm, empNo, filePath);
+            programService.updateProgram(pgmId, pgmNm, empNo, filePath, sleepTime);
             return new ResponseEntity<>("Program updated successfully", HttpStatus.OK);
         } catch (RuntimeException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -83,11 +82,13 @@ public class ProgramController {
     @PostMapping("/delete")
     public ResponseEntity<?> deleteProgram(@RequestBody ProgramDto programDto) {
         try {
-            String pgmId = programDto.getPgmId();
+            Long pgmId = programDto.getPgmId();
+            String empNo = programDto.getEmpNo();
+
 
             // 서비스 호출하여 REG_YN을 0으로 업데이트
             System.out.println(pgmId);
-            programService.deleteProgram(pgmId);
+            programService.deleteProgram(empNo, pgmId);
             return new ResponseEntity<>("Program deleted successfully", HttpStatus.OK);
         } catch (RuntimeException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
