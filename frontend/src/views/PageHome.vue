@@ -140,7 +140,7 @@ pause
 
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'program_execution.bat';
+      link.download = 'PC자동실행프로그램.bat';
       link.click();
 
       URL.revokeObjectURL(url); // 다운로드 후 URL 제거
