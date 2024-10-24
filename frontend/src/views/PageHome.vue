@@ -2,15 +2,18 @@
   <div class="container">
     <!-- 상단에 로그인 사용자 정보 표시 -->
     <div class="user-info">
-      <p>로그인 사용자: {{ user?.employeeNumber || "정보 없음" }}</p> <!-- 사용자 정보가 없을 때 "정보 없음" 출력 -->
+      <p>로그인 사용자: {{ user?.employeeNumber || "정보 없음" }}</p>
+      <button @click="downloadBatFile" class="download-btn">
+        <span class="icon">⬇️</span> 실행 프로그램 다운로드
+      </button> <!-- 실행 프로그램 다운로드 버튼 -->
     </div>
 
     <h1>수행 프로그램 목록</h1>
     <div class="table-header">
-      <span class="execution-date">실행 일시: {{ executionDate || "불러오는 중..." }}</span> <!-- 실행 일시 우측 정렬 -->
+      <span class="execution-date">실행 일시: {{ executionDate || "불러오는 중..." }}</span>
     </div>
 
-    <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p> <!-- 에러 메시지 표시 -->
+    <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
 
     <table v-if="programList.length">
       <thead>
@@ -30,19 +33,19 @@
         </tr>
       </tbody>
     </table>
-    
+
     <p v-else>프로그램 목록을 불러오는 중입니다...</p>
   </div>
 </template>
 
 <script>
-import { useUserStore } from '@/stores/userStore'; // 사용자 정보를 Pinia 또는 Vuex에서 가져옴
-import axios from 'axios'; // axios를 사용하여 API 호출
+import { useUserStore } from '@/stores/userStore';
+import axios from 'axios';
 
 export default {
   setup() {
-    const userStore = useUserStore(); // Pinia에서 사용자 정보 가져오기
-    const user = userStore.user; // 사용자 정보
+    const userStore = useUserStore();
+    const user = userStore.user;
 
     return {
       user,
@@ -50,52 +53,103 @@ export default {
   },
   data() {
     return {
-      executionDate: '', // API에서 실행 일시 받아오기
-      programList: [], // API에서 프로그램 목록 받아오기
-      errorMessage: '', // 에러 메시지
-      isLoading: false, // 로딩 상태 표시
+      executionDate: '',
+      programList: [],
+      errorMessage: '',
+      isLoading: false,
     };
   },
   mounted() {
-    // 컴포넌트가 마운트될 때 프로그램 목록과 실행 일시를 API로부터 가져옴
     this.fetchProgramData();
   },
   methods: {
     async fetchProgramData() {
-      this.isLoading = true; // 로딩 시작
+      this.isLoading = true;
       try {
-        // 1. 프로그램 목록 API 호출
         const programResponse = await axios.get('/api/programs');
         this.executionDate = programResponse.data.executionDate;
         this.programList = programResponse.data.programList;
 
-        // 2. 각 프로그램에 대한 성공 여부 API 호출
         const statusResponse = await axios.get('/api/programs/status');
         const statusData = statusResponse.data;
 
-        // 프로그램 리스트에 성공 여부를 매핑
         this.programList = this.programList.map(program => {
           const status = statusData.find(statusItem => statusItem.id === program.id);
           return {
             ...program,
-            success: status ? status.success : false, // 성공 여부를 프로그램에 추가
+            success: status ? status.success : false,
           };
         });
-
       } catch (error) {
-        // API 호출 실패 시 에러 메시지 처리
         this.errorMessage = "프로그램 목록을 불러오는 중 에러가 발생했습니다.";
         console.error("API 호출 에러:", error);
       } finally {
-        this.isLoading = false; // 로딩 종료
+        this.isLoading = false;
       }
+    },
+    downloadBatFile() {
+     // const empNo = this.user.employeeNumber; // 로그인된 사용자 정보에서 empNo 가져옴
+        const empNo = '1023083'; // 로그인된 사용자 정보에서 empNo 가져옴
+      const batFileContent = `
+@echo off
+
+setlocal enabledelayedexpansion
+
+set empNo=${empNo}
+
+
+echo Calling API to fetch program information for employee number %empNo%
+curl -X GET "http://localhost:8080/api/programs/%empNo%" -H "Content-Type: application/json" -o programs.json
+
+
+echo Showing programs.json content:
+type programs.json
+
+
+echo Extracting program sequence, IDs, file paths, and sleep times...
+for /f "delims=" %%i in ('jq -r ".[] | (.sequence | tostring) + \\" \\" + (.pgmId | tostring) + \\" \\" + .filePath + \\" \\" + (.sleepTime | tostring)" programs.json') do (
+    for /f "tokens=1,2,3,4" %%a in ("%%i") do (
+        echo Running program sequence: %%a, pgmId: %%b for empNo: %empNo% at %%c with sleep time: %%d seconds
+
+        
+        call "%%c"
+    
+        if errorlevel 1 (
+            set scssYn=0
+            echo Program sequence: %%a, pgmId: %%b for empNo: %empNo% failed, scssYn: !scssYn!
+        ) else (
+            set scssYn=1
+            echo Program sequence: %%a, pgmId: %%b for empNo: %empNo% succeeded, scssYn: !scssYn!
+        )
+
+        echo Calling API to insert program status for empNo: %empNo%, pgmId: %%b, scssYn: !scssYn!
+        curl -X POST "http://localhost:8080/api/insertStatus" ^
+            -H "Content-Type: application/json" ^
+            -d "{\\"empNo\\": \\"%empNo%\\", \\"pgmId\\": \\"%%b\\", \\"scssYn\\": !scssYn!}"
+
+        echo Sleeping for %%d seconds...
+        timeout /t %%d /nobreak >nul
+    )
+)
+
+pause
+      `;
+
+      const blob = new Blob([batFileContent], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'program_execution.bat';
+      link.click();
+
+      URL.revokeObjectURL(url); // 다운로드 후 URL 제거
     },
   },
 };
 </script>
 
 <style scoped>
-/* 사용자 정보를 우측 상단에 고정하는 스타일 */
 .user-info {
   text-align: right;
   margin-bottom: 20px;
@@ -106,6 +160,16 @@ export default {
 @font-face {
   font-family: 'KCCMurukmuruk';
   src: url('@/fonts/KCCMurukmuruk.ttf') format('truetype');
+}
+
+.download-btn {
+  padding: 10px 20px;
+  font-size: 14px;
+  background-color: #FFEFD5;
+  color: black;
+  border: none;
+  cursor: pointer;
+  font-family: 'KCCMurukmuruk', sans-serif;
 }
 
 .container {
@@ -123,7 +187,7 @@ h1 {
 
 .table-header {
   display: flex;
-  justify-content: flex-end; /* 오른쪽 정렬 */
+  justify-content: flex-end;
   margin-bottom: 10px;
 }
 
@@ -146,16 +210,14 @@ th, td {
   text-align: center;
 }
 
-/* 성공 여부에 따른 텍스트 색상 스타일 */
 .success {
-  color: green; /* 성공인 경우 초록색 */
+  color: green;
 }
 
 .failure {
-  color: red; /* 실패인 경우 빨간색 */
+  color: red;
 }
 
-/* 에러 메시지 스타일 */
 .error-message {
   color: red;
   font-weight: bold;

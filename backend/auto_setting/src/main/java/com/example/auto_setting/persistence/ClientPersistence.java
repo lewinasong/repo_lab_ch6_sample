@@ -15,7 +15,7 @@ public class ClientPersistence {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    // 프로그램 순서, 프로그램명, 경로 조회
+    // 프로그램 순서, 프로그램명, 경로, SLEEP_TIME 조회
     public List<ProgramInfo> clientSelect(String empNo) {
         System.out.println("CONNECT TO MYSQL");
         
@@ -28,7 +28,10 @@ public class ClientPersistence {
                         1 AS SEQUENCE -- 순서 값을 1로 설정
                     FROM PGM_EXEC_BASE
                     WHERE EMP_NO = ?
-
+                     AND EXEC_LIST_ID = ( SELECT MAX(EXEC_LIST_ID)
+                                            FROM PGM_EXEC_BASE
+                                              WHERE EMP_NO = ?
+                                          )
                     UNION ALL
 
                     -- 재귀 쿼리: 남은 문자열에서 다음 프로그램 ID 추출
@@ -38,31 +41,33 @@ public class ClientPersistence {
                         SEQUENCE + 1 AS SEQUENCE -- 순서 값을 1씩 증가
                     FROM EXEC_LIST_SPLIT
                     WHERE REMAINING IS NOT NULL
-                    )
+                )
 
-                    -- 결과: 순서대로 프로그램 정보 조회
-                    SELECT E.SEQUENCE, E.PGM_ID, P.PGM_NM, P.FILE_PATH
-                    FROM EXEC_LIST_SPLIT E
-                    INNER JOIN PGM_BASE P ON E.PGM_ID = P.PGM_ID
-                    WHERE P.REG_YN = '1'
-                    ORDER BY E.SEQUENCE
+                -- 결과: 순서대로 프로그램 정보 조회
+                SELECT E.SEQUENCE, E.PGM_ID, P.PGM_NM, P.FILE_PATH, P.SLEEP_TIME 
+                FROM EXEC_LIST_SPLIT E
+                INNER JOIN PGM_BASE P ON E.PGM_ID = P.PGM_ID
+                WHERE P.REG_YN = '1'
+                ORDER BY E.SEQUENCE
                 """;
 
-        return jdbcTemplate.query(sql, new Object[]{empNo}, new ProgramInfoRowMapper());
+        return jdbcTemplate.query(sql, new Object[]{empNo, empNo}, new ProgramInfoRowMapper());
     }
 
-    // ProgramInfo 클래스 정의
+    // ProgramInfo 클래스 정의 
     public static class ProgramInfo {
-        private int sequence;  // SEQUENCE 필드 추가
+        private int sequence;  
         private int pgmId;
         private String pgmNm;
         private String filePath;
+        private int sleepTime;  
 
-        public ProgramInfo(int sequence, int pgmId, String pgmNm, String filePath) {
+        public ProgramInfo(int sequence, int pgmId, String pgmNm, String filePath, int sleepTime) {
             this.sequence = sequence;
             this.pgmId = pgmId;
             this.pgmNm = pgmNm;
             this.filePath = filePath;
+            this.sleepTime = sleepTime;  
         }
 
         // Getters
@@ -82,6 +87,10 @@ public class ClientPersistence {
             return filePath;
         }
 
+        public int getSleepTime() {
+            return sleepTime;  
+        }
+
         @Override
         public String toString() {
             return "ProgramInfo{" +
@@ -89,19 +98,21 @@ public class ClientPersistence {
                     ", pgmId=" + pgmId +
                     ", pgmNm='" + pgmNm + '\'' +
                     ", filePath='" + filePath + '\'' +
+                    ", sleepTime=" + sleepTime +  
                     '}';
         }
     }
 
-    // RowMapper 클래스 정의
+    // RowMapper 클래스 정의 (SLEEP_TIME 필드 추가)
     public static class ProgramInfoRowMapper implements RowMapper<ProgramInfo> {
         @Override
         public ProgramInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
-            int sequence = rs.getInt("SEQUENCE");  // SEQUENCE 값 추출
+            int sequence = rs.getInt("SEQUENCE");  
             int pgmId = rs.getInt("PGM_ID");
             String pgmNm = rs.getString("PGM_NM");
             String filePath = rs.getString("FILE_PATH");
-            return new ProgramInfo(sequence, pgmId, pgmNm, filePath);
+            int sleepTime = rs.getInt("SLEEP_TIME");  
+            return new ProgramInfo(sequence, pgmId, pgmNm, filePath, sleepTime);
         }
     }
 }
