@@ -2,7 +2,7 @@
   <div class="container">
     <!-- 로그인 사용자 정보 -->
     <div class="user-info">
-      <p>로그인 사용자: {{ user?.employeeNumber || "정보 없음" }}</p>
+      <p>로그인 사용자: {{ user.employeeNumber || "정보 없음" }}</p>
     </div>
 
     <h1>프로그램 목록</h1>
@@ -20,25 +20,20 @@
           <th>선택</th>
           <th>프로그램명</th>
           <th>실행파일 경로</th>
-          <th>실행 대기시간(초)</th> <!-- 실행 대기시간 추가 -->
+          <th>실행 대기시간(초)</th>
           <th>등록일</th>
           <th>수정일</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="(program, index) in programs" :key="index">
-          <td>
-            <input
-              type="radio"
-              v-model="selectedProgram"
-              :value="program"
-            />
-          </td>
-          <td>{{ program.name }}</td>
+          <!-- pgmId는 데이터로만 유지 -->
+          <td><input type="radio" v-model="selectedProgram" :value="program" /></td>
+          <td>{{ program.pgmNm }}</td>
           <td>{{ program.filePath }}</td>
-          <td>{{ program.delayTime }} 초</td> <!-- 실행 대기시간 표시 -->
-          <td>{{ program.registerDate }}</td>
-          <td>{{ program.updateDate }}</td>
+          <td>{{ program.sleepTime }} 초</td>
+          <td>{{ program.sysRegDtm }}</td>
+          <td>{{ program.sysUpdDtm }}</td>
         </tr>
       </tbody>
     </table>
@@ -47,46 +42,31 @@
     <div v-if="showModal && modalType === 'register'" class="modal">
       <div class="modal-content">
         <h2>프로그램 등록</h2>
-
-        <!-- 프로그램 목록 입력 폼 -->
         <table class="program-table">
           <thead>
             <tr>
               <th>프로그램명</th>
               <th>실행파일 경로</th>
-              <th>실행 대기시간(초)</th> <!-- 실행 대기시간 필드 추가 -->
+              <th>실행 대기시간(초)</th>
               <th>삭제</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="(program, index) in newPrograms" :key="index">
-              <td>
-                <input type="text" v-model="program.name" placeholder="프로그램명을 입력하세요" required />
-              </td>
-              <td>
-                <input type="text" v-model="program.filePath" placeholder="파일 경로를 입력하세요" required />
-              </td>
-              <td>
-                <input type="number" v-model="program.delayTime" placeholder="대기시간(초)" required /> <!-- 실행 대기시간 입력 -->
-              </td>
-              <td>
-                <button type="button" @click="removeNewProgram(index)">삭제</button>
-              </td>
+              <td><input type="text" v-model="program.pgmNm" placeholder="프로그램명을 입력하세요" required /></td>
+              <td><input type="text" v-model="program.filePath" placeholder="파일 경로를 입력하세요" required /></td>
+              <td><input type="number" v-model="program.sleepTime" placeholder="대기시간(초)" required /></td>
+              <td><button type="button" @click="removeNewProgram(index)">삭제</button></td>
             </tr>
           </tbody>
         </table>
-
-        <!-- 프로그램 추가 버튼 -->
         <button type="button" @click="addProgram">프로그램 추가</button>
-
-        <!-- 등록 버튼 (모달로 연결) -->
         <button type="button" @click="openConfirmationModal">등록</button>
-        <!-- 취소 버튼 -->
         <button type="button" @click="closeModal">취소</button>
       </div>
     </div>
 
-    <!-- 확인 모달 (등록 확인 모달) -->
+    <!-- 확인 모달 -->
     <div v-if="showConfirmationModal" class="modal">
       <div class="modal-content">
         <h2>프로그램 등록 확인</h2>
@@ -96,23 +76,13 @@
       </div>
     </div>
 
-    <!-- 수정 모달 -->
-    <ModalBase
-      v-if="showModal && modalType === 'update'"
-      :modalType="modalType"
-      :program="selectedProgram"
-      @close="closeModal"
-      @update="updateProgram"
-    />
-
-    <!-- 해제 모달 -->
-    <ModalBase
-      v-if="showModal && modalType === 'remove'"
-      :modalType="modalType"
-      :program="selectedProgram"
-      @close="closeModal"
-      @remove="removeSelectedProgram"
-    />
+    <!-- 수정 및 해제 모달 (ModalBase 사용) -->
+    <ModalBase v-if="showModal && (modalType === 'update' || modalType === 'remove')"
+               :modalType="modalType"
+               :program="selectedProgram"
+               @close="closeModal"
+               @update="submitProgramUpdate"
+               @remove="removeSelectedProgram" />
   </div>
 </template>
 
@@ -123,110 +93,102 @@ import ModalBase from './ModalBase.vue';
 import axios from 'axios';
 
 export default {
-  components: {
-    ModalBase
-  },
+  components: { ModalBase },
   setup() {
     const showModal = ref(false);
     const showConfirmationModal = ref(false);
     const modalType = ref('');
-
     const programs = ref([]);
     const selectedProgram = ref(null);
-
-    // 새로 등록할 프로그램 목록
-    const newPrograms = ref([{ name: '', filePath: '', delayTime: 0 }]); // 실행 대기시간 초기화
+    const newPrograms = ref([{ pgmId: '', pgmNm: '', filePath: '', sleepTime: 0 }]);
 
     const userStore = useUserStore();
-    const user = userStore.user;
+    const user = userStore;
 
+    // Modal 관리 함수
     const openModal = (type) => {
       modalType.value = type;
       showModal.value = true;
     };
-
     const closeModal = () => {
       showModal.value = false;
-      newPrograms.value = [{ name: '', filePath: '', delayTime: 0 }]; // 폼 초기화
+      newPrograms.value = [{ pgmId: '', pgmNm: '', filePath: '', sleepTime: 0 }];
     };
+    const openConfirmationModal = () => { showConfirmationModal.value = true; };
+    const closeConfirmationModal = () => { showConfirmationModal.value = false; };
 
-    const openConfirmationModal = () => {
-      showConfirmationModal.value = true;
-    };
-
-    const closeConfirmationModal = () => {
-      showConfirmationModal.value = false;
-    };
-
+    // 프로그램 목록 불러오기
     const fetchPrograms = async () => {
       try {
-        const response = await axios.get('/api/programs');
-        programs.value = response.data;
+        if (user.employeeNumber) {
+          const response = await axios.get(`/api/program/PagePgmBase/${user.employeeNumber}`);
+          programs.value = response.data;
+        }
       } catch (error) {
-        console.error("프로그램 목록을 불러오는 중 오류 발생:", error);
+        console.error("Error fetching program list:", error);
       }
     };
 
-    const addProgram = () => {
-      newPrograms.value.push({ name: '', filePath: '', delayTime: 0 });
-    };
-
-    const removeNewProgram = (index) => {
-      newPrograms.value.splice(index, 1);
-    };
-
+    // 프로그램 등록
     const registerMultiplePrograms = async () => {
       try {
         for (const program of newPrograms.value) {
-          if (!program.name || !program.filePath || program.delayTime < 0) {
-            alert('모든 프로그램명, 파일 경로 및 실행 대기시간을 올바르게 입력해주세요.');
+          if (!program.pgmNm || !program.filePath || program.sleepTime < 0) {
+            alert('Please fill out all fields correctly.');
             return;
           }
-          await axios.post('/api/programs', program);
+          const programDto = {
+            pgmNm: program.pgmNm,
+            empNo: user.employeeNumber,
+            filePath: program.filePath,
+            sleepTime: program.sleepTime
+          };
+          await axios.post('/api/program/register', programDto);
         }
-        alert('프로그램이 성공적으로 등록되었습니다.');
+        alert('Programs registered successfully.');
         fetchPrograms();
         closeModal();
         closeConfirmationModal();
       } catch (error) {
-        console.error("프로그램 등록 중 오류 발생:", error);
+        console.error("Error registering programs:", error);
       }
     };
 
+    // 프로그램 수정 제출
+    const submitProgramUpdate = async (updatedProgram) => {
+      try {
+        updatedProgram.empNo = user.employeeNumber;
+        updatedProgram.pgmId = selectedProgram.value.pgmId; // selectedProgram의 pgmId를 사용
+
+        await axios.post('/api/program/modify', updatedProgram);
+        alert('Program updated successfully.');
+        fetchPrograms();
+        closeModal();
+      } catch (error) {
+        console.error("Error updating program:", error);
+      }
+    };
+
+    // 새로운 프로그램 추가 및 삭제
+    const addProgram = () => { newPrograms.value.push({ pgmId: '', pgmNm: '', filePath: '', sleepTime: 0 }); };
+    const removeNewProgram = (index) => { newPrograms.value.splice(index, 1); };
+
+    // 프로그램 삭제
     const removeSelectedProgram = async () => {
       if (selectedProgram.value) {
-        const confirmDelete = confirm('선택한 프로그램을 해제하시겠습니까?');
+        const confirmDelete = confirm('Are you sure you want to delete this program?');
         if (confirmDelete) {
           try {
-            await axios.delete(`/api/programs/${selectedProgram.value.id}`);
+            const programDto = {
+              pgmId: selectedProgram.value.pgmId,
+              empNo: user.employeeNumber
+            };
+            await axios.post('/api/program/delete', programDto);
             programs.value = programs.value.filter(p => p !== selectedProgram.value);
             selectedProgram.value = null;
           } catch (error) {
-            console.error("프로그램 삭제 중 오류 발생:", error);
+            console.error("Error deleting program:", error);
           }
-        }
-      }
-    };
-
-    const updateProgram = async () => {
-      if (selectedProgram.value) {
-        const newName = prompt("새 프로그램명을 입력하세요", selectedProgram.value.name);
-        const newFilePath = prompt("새 실행파일 경로를 입력하세요", selectedProgram.value.filePath);
-        const newDelayTime = prompt("새 실행 대기시간(초)을 입력하세요", selectedProgram.value.delayTime);
-
-        const updatedProgram = {
-          ...selectedProgram.value,
-          name: newName,
-          filePath: newFilePath,
-          delayTime: newDelayTime,
-          updateDate: new Date().toISOString().slice(0, 10)
-        };
-
-        try {
-          await axios.put(`/api/programs/${selectedProgram.value.id}`, updatedProgram);
-          selectedProgram.value = updatedProgram;
-        } catch (error) {
-          console.error("프로그램 수정 중 오류 발생:", error);
         }
       }
     };
@@ -242,6 +204,7 @@ export default {
       programs,
       selectedProgram,
       newPrograms,
+      user,
       openModal,
       closeModal,
       openConfirmationModal,
@@ -249,17 +212,16 @@ export default {
       addProgram,
       removeNewProgram,
       registerMultiplePrograms,
-      updateProgram,
+      submitProgramUpdate,
       removeSelectedProgram,
-      fetchPrograms,
-      user
+      fetchPrograms
     };
   }
 };
 </script>
 
+
 <style scoped>
-/* 로그인 사용자 정보를 상단에 표시하는 스타일 */
 .user-info {
   text-align: right;
   margin-bottom: 20px;
@@ -316,7 +278,6 @@ th, td {
   min-height: 400px;
 }
 
-/* 표 스타일 */
 .program-table {
   width: 100%;
   border-collapse: collapse;
@@ -336,15 +297,15 @@ th, td {
 }
 
 button {
-  font-family: 'KCCMurukmuruk', sans-serif; /* 버튼 글씨체 유지 */
+  font-family: 'KCCMurukmuruk', sans-serif;
   padding: 10px 20px;
   font-size: 16px;
   cursor: pointer;
   border: none;
   border-radius: 4px;
-  background-color: #4CAF50; /* 기본 버튼 배경색 */
+  background-color: #4CAF50;
   color: white;
-  margin-left: 10px; /* 각 버튼 사이의 간격 */
+  margin-left: 10px;
 }
 
 button:first-child {
@@ -362,6 +323,5 @@ button:disabled {
 
 button:disabled:hover {
   background-color: grey;
-  cursor: not-allowed;
 }
 </style>

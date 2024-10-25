@@ -2,7 +2,7 @@
   <div class="container">
     <!-- 로그인 사용자 정보 -->
     <div class="user-info">
-      <p>로그인 사용자: {{ user?.employeeNumber || "정보 없음" }}</p>
+      <p>로그인 사용자: {{ user.employeeNumber || "정보 없음" }}</p>
     </div>
 
     <h1>프로그램 실행순서 설정</h1>
@@ -85,7 +85,7 @@ export default {
     // 사용자 정보를 Pinia 스토어에서 가져옴
     user() {
       const userStore = useUserStore();
-      return userStore.user;
+      return userStore;
     }
   },
   mounted() {
@@ -151,52 +151,10 @@ export default {
       }
       this.showSaveModal = true; // 모달 열기
     },
-    // 프로그램을 배치 파일로 저장하는 메서드
+    // 저장 확인 모달에서 확인 버튼을 눌렀을 때 처리하는 메서드
     savePrograms() {
-      let batContent = '@echo off\nsetlocal EnableDelayedExpansion\n';
-
-      this.sortedPrograms.forEach((program, index) => {
-        const filePath = program.filePath;
-        const fileName = filePath.split("\\").pop();
-        const fileExtension = fileName.split(".").pop();
-
-        batContent += `if exist "${filePath}" (\n`;
-        batContent += `    start "" "${filePath}"\n`;
-
-        if (fileExtension === "exe") {
-          batContent += `    for /f "tokens=2 delims=," %%i in ('tasklist /FI "IMAGENAME eq ${fileName}" /FO CSV ^| findstr /I "${fileName}"') do (\n`;
-          batContent += `        set "pid_${index}=%%~i"\n`;
-          batContent += `        set "status_${index}=1"\n`;
-          batContent += `    )\n`;
-          batContent += `    if defined pid_${index} (\n`;
-          batContent += `        echo ${program.name} pid: !pid_${index}!\n`;
-          batContent += `    ) else (\n`;
-          batContent += `        echo ${program.name} pid: Not found\n`;
-          batContent += `    )\n`;
-        } else {
-          batContent += `    echo ${program.name} is not an executable, skipping PID check.\n`;
-          batContent += `    set "status_${index}=1"\n`;
-        }
-        batContent += `    echo ${program.name} status: !status_${index}!\n`;
-        batContent += `) else (\n`;
-        batContent += `    echo File not found: "${filePath}"\n`;
-        batContent += `    set "status_${index}=0"\n`;
-        batContent += `)\n\n`;
-      });
-
-      batContent += '\necho All programs started.\npause\n';
-
-      const blob = new Blob([batContent], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'PC세팅자동화.bat';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      alert('PC세팅 자동화 파일생성이 완료되었습니다.');
+      alert('프로그램 순서가 저장되었습니다.');
+      this.showSaveModal = false;
     }
   }
 };

@@ -19,6 +19,8 @@ public class EmployeeController {
     @Autowired
     private EmployeeService employeeService;
 
+    @CrossOrigin(origins = "http://10.233.4.217:8089") // 프론트엔드 주소
+
     @GetMapping(path = "/login/{empNo}")
     public String login(
             @PathVariable String empNo

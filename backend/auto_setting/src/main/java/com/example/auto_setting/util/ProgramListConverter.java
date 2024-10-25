@@ -2,6 +2,7 @@ package com.example.auto_setting.util;
 
 import lombok.NonNull;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -19,7 +20,7 @@ public class ProgramListConverter {
         final List<Integer> programIdlist = Arrays.stream(splitProgramIdList)
                 .map(Integer::parseInt)
                 .toList();
-        return programIdlist;
+        return new ArrayList<>(programIdlist);
     }
 
     // Program Id List를 EXEC_LIST 형태로 변환 (예시. [1,3,4,7,2] => "1,3,4,7,2")

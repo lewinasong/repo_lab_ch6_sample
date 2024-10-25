@@ -20,6 +20,8 @@ public class ProgramController {
 
     private final ProgramService programService;
 
+    @CrossOrigin(origins = "http://10.233.4.217:8089") // 프론트엔드 주소
+
     // 프로그램 조회
     @GetMapping("/PagePgmBase/{empNo}")
     public ResponseEntity<?> getProgramByEmpNo(@PathVariable String empNo) {

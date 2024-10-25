@@ -2,7 +2,7 @@
   <div class="container">
     <!-- 상단에 로그인 사용자 정보 표시 -->
     <div class="user-info">
-      <p>로그인 사용자: {{ user?.employeeNumber || "정보 없음" }}</p>
+      <p>로그인 사용자: {{ user.employeeNumber || "정보 없음" }}</p>
       <button @click="downloadBatFile" class="download-btn">
         <span class="icon">⬇️</span> 실행 프로그램 다운로드
       </button> <!-- 실행 프로그램 다운로드 버튼 -->
@@ -45,7 +45,7 @@ import axios from 'axios';
 export default {
   setup() {
     const userStore = useUserStore();
-    const user = userStore.user;
+    const user = userStore;
 
     return {
       user,
@@ -88,8 +88,7 @@ export default {
       }
     },
     downloadBatFile() {
-     // const empNo = this.user.employeeNumber; // 로그인된 사용자 정보에서 empNo 가져옴
-        const empNo = '1023083'; // 로그인된 사용자 정보에서 empNo 가져옴
+      const empNo = this.user.employeeNumber || '정보 없음';
       const batFileContent = `
 @echo off
 
