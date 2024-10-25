@@ -11,6 +11,8 @@
       <router-link to="/PagePgmBase">프로그램 등록 및 수정</router-link>
       <span class="separator">|</span>
       <router-link to="/PagePgmDtl">프로그램 실행순서 설정</router-link>
+      <span class="separator">|</span>
+      <router-link to="/ClientReturn">클라이언트 테스트</router-link>
     </div>
   </header>
   <hr/>

@@ -89,7 +89,7 @@ export default {
         { id: 1, name: "SG Client", filePath: "C:\\Users\\82103\\OneDrive\\SG Client.exe", order: '' },
         { id: 2, name: "Chakra", filePath: "C:\\Program Files\\Chakra", order: '' },
         { id: 3, name: "NeoWorks", filePath: "C:\\NeoWorks\\neo.exe", order: '' },
-        { id: 4, name: "Slack", filePath: "C:\\Users\\82103\\AppData\\Local\\slack\\slack.exe", order: '' }
+        { id: 4, name: "Slack", filePath: "C:\\Users\\user\\AppData\\Local\\slack\\slack.exe", order: '' }
       ],
       sortedPrograms: [],
       waitTime: 3, // 기본 실행 대기 시간
