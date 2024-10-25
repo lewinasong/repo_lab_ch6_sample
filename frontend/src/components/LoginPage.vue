@@ -12,7 +12,7 @@
           required
         />
       </div>
-      <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p> <!-- 에러 메시지 표시 -->
+      <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
       <button type="submit">Login</button>
     </form>
   </div>
@@ -20,10 +20,9 @@
 
 <script>
 import { useUserStore } from '@/stores/userStore'; // Pinia 스토어 가져오기
-import axios from 'axios'; // axios를 사용하여 API 호출
+import apiClient from '@/api'; // api.js에서 만든 axios 인스턴스를 가져옴
 
 export default {
-  name: "LoginPage",
   data() {
     return {
       employeeNumber: "", // 입력된 행번을 저장
@@ -39,22 +38,31 @@ export default {
 
         try {
           // API 요청
-          const response = await axios.post('/api/login', {
-            employeeNumber: this.employeeNumber,
-          });
+          const response = await apiClient.get(`/api/login/${this.employeeNumber}`);
 
-          // 성공적으로 응답 받으면 Pinia 스토어에 사용자 정보 저장
-          const userStore = useUserStore();
-          userStore.setUser({
-            employeeNumber: response.data.employeeNumber,
-            name: response.data.name, // 서버에서 받은 이름
-          });
+          const responseText = response.data; // 백엔드에서 받은 응답 텍스트
 
-          // 로그인 후 메인 페이지로 이동
-          this.$router.push({ name: 'PageHome' });
+          // 로그인 성공 여부 판단
+          if (responseText.startsWith("로그인 성공")) {
+            // 직원 이름 추출 (예: "로그인 성공. 직원 이름: 홍길동")
+            const employeeName = responseText.split("직원 이름: ")[1];
+
+            // Pinia 스토어에 사용자 정보 저장
+            const userStore = useUserStore();
+            userStore.setUser({
+              employeeNumber: this.employeeNumber,
+              name: employeeName, // 추출한 직원 이름
+            });
+
+            // 로그인 후 메인 페이지로 이동
+            this.$router.push({ name: 'PageHome' });
+          } else {
+            // 로그인 실패 시 에러 메시지 표시
+            this.errorMessage = "로그인에 실패했습니다. 다시 시도해주세요.";
+          }
 
         } catch (error) {
-          // 에러 처리
+          // 에러 처리: 네트워크 오류 또는 기타 오류 시 에러 메시지 표시
           this.errorMessage = "로그인에 실패했습니다. 다시 시도해주세요.";
         }
       }
@@ -63,89 +71,80 @@ export default {
 };
 </script>
 
-
 <style scoped>
 /* 사용자 정보를 우측 상단에 고정하는 스타일 */
 .user-info {
-  position: fixed; /* 화면에 고정 */
-  top: 10px; /* 상단에서 10px 떨어진 위치 */
-  right: 20px; /* 우측에서 20px 떨어진 위치 */
-  background-color: #f4f4f4; /* 배경색 설정 */
-  padding: 10px; /* 여백 설정 */
-  border-radius: 5px; /* 모서리 둥글게 설정 */
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* 약간의 그림자 효과 */
-  font-size: 14px; /* 폰트 크기 설정 */
+  position: fixed;
+  top: 10px;
+  right: 20px;
+  background-color: #f4f4f4;
+  padding: 10px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  font-size: 14px;
 }
-/* 커스텀 폰트 설정 */
+
 @font-face {
-  font-family: 'KCCMurukmuruk'; /* 커스텀 폰트의 이름 정의 */
-  src: url('@/fonts/KCCMurukmuruk.ttf') format('truetype'); /* 폰트 파일의 경로 및 형식 지정 */
+  font-family: 'KCCMurukmuruk';
+  src: url('@/fonts/KCCMurukmuruk.ttf') format('truetype');
 }
 
-/* 페이지 전체 레이아웃 설정 */
 body, html {
-  height: 100%; /* 페이지 전체 높이를 화면에 맞게 설정 */
-  margin: 0; /* 기본 여백 제거 */
-  display: flex; /* Flexbox 레이아웃을 사용하여 중앙 정렬 */
-  justify-content: center; /* 수평으로 중앙 정렬 */
-  align-items: center; /* 수직으로 중앙 정렬 */
+  height: 100%;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-/* 로그인 컨테이너 스타일 */
 .login-container {
-  max-width: 400px; /* 로그인 컨테이너의 최대 너비 설정 */
-  margin: 50px auto; /* 위아래로 50px 마진을 두고, 좌우는 중앙 정렬 */
-  padding: 40px; /* 컨테이너 내부 여백 설정 */
-  border: 1px solid #ccc; /* 회색 테두리 추가 */
-  border-radius: 8px; /* 테두리를 둥글게 설정 */
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* 컨테이너 주위에 살짝 그림자 효과 추가 */
-  font-family: 'KCCMurukmuruk', sans-serif; /* 컨테이너 내 모든 텍스트에 커스텀 폰트 적용 */
+  max-width: 400px;
+  margin: 50px auto;
+  padding: 40px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  font-family: 'KCCMurukmuruk', sans-serif;
 }
 
-/* 폼 그룹 스타일 */
 .form-group {
-  display: flex; /* Flexbox를 사용하여 레이블과 입력 필드를 가로로 정렬 */
-  align-items: center; /* 레이블과 입력 필드를 수직 가운데 정렬 */
-  margin-bottom: 15px; /* 각 폼 그룹 간의 간격 설정 */
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
 }
 
-/* 폼 라벨 스타일 */
 .form-group label {
-  margin-right: 10px; /* 레이블과 입력 필드 사이의 간격 설정 */
-  width: 60px; /* 레이블의 고정된 너비 설정으로 정렬 일관성 유지 */
+  margin-right: 10px;
+  width: 60px;
 }
 
-/* 입력 필드 스타일 */
 .form-group input {
-  flex: 1; /* 입력 필드가 가능한 공간을 최대한 차지하도록 설정 */
-  padding: 10px; /* 입력 필드 내부 여백 설정 */
-  border: 1px solid #ccc; /* 회색 테두리 추가 */
-  border-radius: 4px; /* 입력 필드의 테두리를 둥글게 설정 */
-  height: 20px; /* 입력 필드의 높이 설정 */
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  height: 20px;
 }
 
-/* 에러 메시지 스타일 */
 .error-message {
-  color: red; /* 에러 메시지를 빨간색으로 표시 */
-  margin: 10px 0; /* 위아래 간격 설정 */
-  font-size: 14px; /* 에러 메시지의 글씨 크기 설정 */
+  color: red;
+  margin: 10px 0;
+  font-size: 14px;
 }
 
-/* 버튼 스타일 */
 button {
-  width: 100%; /* 버튼 너비를 부모 요소의 너비에 맞춤 */
-  padding: 10px; /* 버튼 내부 여백 설정 */
-  background-color: #42b983; /* 버튼의 배경색 설정 */
-  color: white; /* 버튼 텍스트 색상 설정 */
-  border: none; /* 기본 테두리 제거 */
-  border-radius: 4px; /* 버튼의 테두리를 둥글게 설정 */
-  cursor: pointer; /* 마우스 포인터가 버튼 위에 있을 때 손가락 모양으로 변경 */
-  font-family: 'KCCMurukmuruk', sans-serif; /* 커스텀 폰트 적용 */
-  height: 48px; /* 버튼의 높이를 입력 필드와 일치하도록 설정 */
+  width: 100%;
+  padding: 10px;
+  background-color: #42b983;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: 'KCCMurukmuruk', sans-serif;
+  height: 48px;
 }
 
-/* 버튼 호버 스타일 */
 button:hover {
-  background-color: #38a169; /* 마우스를 버튼 위에 올렸을 때 배경색 변경 */
+  background-color: #38a169;
 }
 </style>
