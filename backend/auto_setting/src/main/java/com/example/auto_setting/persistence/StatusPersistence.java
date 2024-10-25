@@ -1,6 +1,10 @@
 package com.example.auto_setting.persistence;
 
 import com.example.auto_setting.service.ProgramDto;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
@@ -33,14 +37,14 @@ public class StatusPersistence {
         Timestamp currentTimestamp = Timestamp.valueOf(now);
 
         //HIST_ID의 최대값에 1을 더해 새로운 ID 생성
-        String histIdQuery = "SELECT COALESCE(MAX(HIST_ID), 0) + 1 FROM PGM_EXEC_PTCL";
-        Integer histId = jdbcTemplate.queryForObject(histIdQuery, Integer.class);
+        //String histIdQuery = "SELECT COALESCE(MAX(HIST_ID), 0) + 1 FROM PGM_EXEC_PTCL";
+        //Integer histId = jdbcTemplate.queryForObject(histIdQuery, Integer.class);
 
         //INSERT 쿼리 작성 (HIST_ID, EMP_NO, PGM_ID, PGM_STR_DT, SCSS_YN, PGM_STR_DTM)
         try {
-            String sql = "insert into PGM_EXEC_PTCL (HIST_ID, EMP_NO, PGM_ID, PGM_STR_DT, SCSS_YN, PGM_STR_DTM)" +
-                    "VALUES (?, ?, ?, ?, ?, ?)";
-            jdbcTemplate.update(sql, histId, empNo, pgmId, today, scssYn, currentTimestamp);  // 상태값을 DB에 업데이트
+            String sql = "insert into PGM_EXEC_PTCL (EMP_NO, PGM_ID, PGM_STR_DT, SCSS_YN, PGM_STR_DTM)" +
+                    "VALUES (?, ?, ?, ?, ?)";
+            jdbcTemplate.update(sql, empNo, pgmId, today, scssYn, currentTimestamp);  // 상태값을 DB에 업데이트
         }catch (Exception e) {
             //throw new RuntimeException(e);
             log.error("Error while inserting status: ", e);
@@ -50,5 +54,33 @@ public class StatusPersistence {
     }
 
 
+    // empNo와 오늘 날짜를 기반으로 데이터를 조회하는 메서드
+    public List<PGM_EXEC_PTCL> findByEmpNoAndPgmStrDt(String empNo, LocalDate pgmStrDt) {
+        String sql = "SELECT * FROM PGM_EXEC_PTCL WHERE EMP_NO = ? AND PGM_STR_DT = ?";
+
+        return jdbcTemplate.query(
+                sql,
+                new Object[]{empNo, pgmStrDt},
+                (rs, rowNum) -> new PGM_EXEC_PTCL(
+                        rs.getString("EMP_NO"),
+                        rs.getDate("PGM_STR_DT").toLocalDate(),
+                        rs.getInt("SCSS_YN"),
+                        rs.getString("PGM_ID")
+
+                )
+        );
+    }
+
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    public static class PGM_EXEC_PTCL {
+        private String empNo;
+        private LocalDate pgmStrDt;
+        private Integer scssYn;
+        private String pgmID;
+    }
 
 }
