@@ -2,12 +2,12 @@
   <div class="container">
     <!-- 로그인 사용자 정보 -->
     <div class="user-info">
-      <p>로그인 사용자: {{ user?.employeeNumber || "정보 없음" }}</p> <!-- 사용자 정보가 없을 때 "정보 없음" 출력 -->
+      <p>로그인 사용자: {{ user.employeeNumber || "정보 없음" }}</p>
     </div>
 
     <h1>프로그램 목록</h1>
-    
-    <!-- 상단에 버튼 추가 -->
+
+    <!-- 상단에 등록, 수정, 해제 버튼 추가 -->
     <div class="button-container">
       <button class="reg_button" @click="openModal('register')">등록</button>
       <button class="upd_button" @click="openModal('update')" :disabled="!selectedProgram">수정</button>
@@ -20,169 +20,204 @@
           <th>선택</th>
           <th>프로그램명</th>
           <th>실행파일 경로</th>
+          <th>실행 대기시간(초)</th>
           <th>등록일</th>
           <th>수정일</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="(program, index) in programs" :key="index">
-          <td>
-            <input 
-              type="radio" 
-              v-model="selectedProgram" 
-              :value="program" 
-            />
-          </td>
-          <td>{{ program.name }}</td>
+          <td><input type="radio" v-model="selectedProgram" :value="program" /></td>
+          <td>{{ program.pgmNm }}</td>
           <td>{{ program.filePath }}</td>
-          <td>{{ program.registerDate }}</td>
-          <td>{{ program.updateDate }}</td>
+          <td>{{ program.sleepTime }} 초</td>
+          <td>{{ program.sysRegDtm }}</td>
+          <td>{{ program.sysUpdDtm }}</td>
         </tr>
       </tbody>
     </table>
-    <ModalBase 
-      v-if="showModal" 
-      :modalType="modalType" 
-      :program="selectedProgram"
-      @close="showModal = false" 
-      @register="registerProgram" 
-      @update="updateProgram" 
-      @remove="removeProgram"
-    />
+
+    <!-- 등록 및 확인 모달 -->
+    <div v-if="showModal && modalType === 'register'" class="modal">
+      <div class="modal-content">
+        <h2>프로그램 등록</h2>
+        <table class="program-table">
+          <thead>
+            <tr>
+              <th>프로그램명</th>
+              <th>실행파일 경로</th>
+              <th>실행 대기시간(초)</th>
+              <th>삭제</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(program, index) in newPrograms" :key="index">
+              <td><input type="text" v-model="program.pgmNm" placeholder="프로그램명을 입력하세요" required /></td>
+              <td><input type="text" v-model="program.filePath" placeholder="파일 경로를 입력하세요" required /></td>
+              <td><input type="number" v-model="program.sleepTime" placeholder="대기시간(초)" required /></td>
+              <td><button type="button" @click="removeNewProgram(index)">삭제</button></td>
+            </tr>
+          </tbody>
+        </table>
+        <button type="button" @click="addProgram">프로그램 추가</button>
+        <button type="button" @click="openConfirmationModal">등록</button>
+        <button type="button" @click="closeModal">취소</button>
+      </div>
+    </div>
+
+    <!-- 확인 모달 -->
+    <div v-if="showConfirmationModal" class="modal">
+      <div class="modal-content">
+        <h2>프로그램 등록 확인</h2>
+        <p>정말로 프로그램을 등록하시겠습니까?</p>
+        <button type="button" @click="registerMultiplePrograms">확인</button>
+        <button type="button" @click="closeConfirmationModal">취소</button>
+      </div>
+    </div>
+
+    <!-- 수정 모달 (ModalBase를 수정에 활용) -->
+    <ModalBase v-if="showModal && (modalType === 'update' || modalType === 'remove')"
+               :modalType="modalType"
+               :program="selectedProgram"
+               @close="closeModal"
+               @update="submitProgramUpdate"
+               @remove="removeSelectedProgram" />
   </div>
 </template>
 
 <script>
-import { ref } from 'vue';
-import { useUserStore } from '@/stores/userStore'; // Pinia 스토어 가져오기
+import { ref, onMounted } from 'vue';
+import { useUserStore } from '@/stores/userStore';
 import ModalBase from './ModalBase.vue';
+import axios from 'axios';
 
 export default {
-  components: {
-    ModalBase
-  },
+  components: { ModalBase },
   setup() {
-    // 모달 상태
     const showModal = ref(false);
+    const showConfirmationModal = ref(false);
     const modalType = ref('');
-
-    // 프로그램 목록
-    const programs = ref([
-      {
-        name: "SG Client",
-        filePath: "C:\\Users\\82103\\OneDrive\\SG Client.exe",
-        registerDate: "2024-09-27",
-        updateDate: "2024-09-27"
-      },
-      {
-        name: "Chakra",
-        filePath: "C:\\Program Files\\Chakra",
-        registerDate: "2024-09-01",
-        updateDate: "2024-09-01"
-      },
-      {
-        name: "NeoWorks",
-        filePath: "C:\\NeoWorks\\neo.exe",
-        registerDate: "2024-09-27",
-        updateDate: "2024-09-27"
-      },
-      {
-        name: "Slack",
-        filePath: "C:\\Users\\82103\\AppData\\Local\\slack\\app-4.40.128",
-        registerDate: "2024-09-27",
-        updateDate: "2024-09-27"
-      }
-    ]);
-
-    // 단일 선택을 위한 변수
+    const programs = ref([]);
     const selectedProgram = ref(null);
+    const newPrograms = ref([{ pgmNm: '', filePath: '', sleepTime: 0 }]);
 
-    // Pinia 스토어에서 로그인한 사용자 정보 가져오기
     const userStore = useUserStore();
-    const user = userStore.user;
+    const user = userStore;
 
-    // 한글 포함 여부 검사 메서드
-    const containsKorean = (text) => {
-      const koreanRegex = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/;
-      return koreanRegex.test(text);
-    };
-
-    // 모달 열기 메서드
+    // Modal 관리 함수
     const openModal = (type) => {
       modalType.value = type;
       showModal.value = true;
     };
+    const closeModal = () => {
+      showModal.value = false;
+      newPrograms.value = [{ pgmNm: '', filePath: '', sleepTime: 0 }];
+    };
+    const openConfirmationModal = () => { showConfirmationModal.value = true; };
+    const closeConfirmationModal = () => { showConfirmationModal.value = false; };
 
-    // 프로그램 등록 메서드
-    const registerProgram = () => {
-      const name = prompt("프로그램명을 입력하세요");
-      const filePath = prompt("실행파일 경로를 입력하세요");
-
-      if (containsKorean(filePath)) {
-        alert("실행파일경로는 영문 및 숫자만 가능합니다. 파일경로를 수정 후 재등록해주세요");
-        return;
-      }
-
-      const newProgram = {
-        name,
-        filePath,
-        registerDate: new Date().toISOString().slice(0, 10),
-        updateDate: new Date().toISOString().slice(0, 10)
-      };
-
-      if (newProgram.name && newProgram.filePath) {
-        programs.value.push(newProgram);
+    // 프로그램 목록 불러오기
+    const fetchPrograms = async () => {
+      try {
+        if (user.employeeNumber) {
+          const response = await axios.get(`/api/program/PagePgmBase/${user.employeeNumber}`);
+          programs.value = response.data;
+        }
+      } catch (error) {
+        console.error("Error fetching program list:", error);
       }
     };
 
-    // 프로그램 수정 메서드
-    const updateProgram = () => {
-      if (selectedProgram.value) {
-        const newName = prompt("새 프로그램명을 입력하세요", selectedProgram.value.name);
-        const newFilePath = prompt("새 실행파일 경로를 입력하세요", selectedProgram.value.filePath);
-
-        if (containsKorean(newFilePath)) {
-          alert("프로그램경로에 한글이 포함되어있습니다. 영문경로로 수정 후 재입력해주세요.");
-          return;
+    // 프로그램 등록
+    const registerMultiplePrograms = async () => {
+      try {
+        for (const program of newPrograms.value) {
+          if (!program.pgmNm || !program.filePath || program.sleepTime < 0) {
+            alert('Please fill out all fields correctly.');
+            return;
+          }
+          const programDto = {
+            pgmNm: program.pgmNm,
+            empNo: user.employeeNumber,
+            filePath: program.filePath,
+            sleepTime: program.sleepTime
+          };
+          await axios.post('/api/program/register', programDto);
         }
-
-        if (newName && newFilePath) {
-          selectedProgram.value.name = newName;
-          selectedProgram.value.filePath = newFilePath;
-          selectedProgram.value.updateDate = new Date().toISOString().slice(0, 10);
-        }
+        alert('Programs registered successfully.');
+        fetchPrograms();
+        closeModal();
+        closeConfirmationModal();
+      } catch (error) {
+        console.error("Error registering programs:", error);
       }
     };
 
-    // 프로그램 삭제 메서드
-    const removeProgram = () => {
+    // 프로그램 수정 제출 (모달 사용)
+    const submitProgramUpdate = async (updatedProgram) => {
+      try {
+        updatedProgram.empNo = user.employeeNumber;
+        await axios.post('/api/program/modify', updatedProgram);
+        alert('Program updated successfully.');
+        fetchPrograms();
+        closeModal();
+      } catch (error) {
+        console.error("Error updating program:", error);
+      }
+    };
+
+    // 새로운 프로그램 추가 및 삭제
+    const addProgram = () => { newPrograms.value.push({ pgmNm: '', filePath: '', sleepTime: 0 }); };
+    const removeNewProgram = (index) => { newPrograms.value.splice(index, 1); };
+
+    // 프로그램 삭제
+    const removeSelectedProgram = async () => {
       if (selectedProgram.value) {
-        const confirmDelete = confirm('선택한 프로그램을 해제하시겠습니까?');
+        const confirmDelete = confirm('Are you sure you want to delete this program?');
         if (confirmDelete) {
-          programs.value = programs.value.filter(p => p !== selectedProgram.value);
-          selectedProgram.value = null;
+          try {
+            const programDto = {
+              pgmId: selectedProgram.value.pgmId,
+              empNo: user.employeeNumber
+            };
+            await axios.post('/api/program/delete', programDto);
+            programs.value = programs.value.filter(p => p !== selectedProgram.value);
+            selectedProgram.value = null;
+          } catch (error) {
+            console.error("Error deleting program:", error);
+          }
         }
       }
     };
+
+    onMounted(() => {
+      fetchPrograms();
+    });
 
     return {
       showModal,
+      showConfirmationModal,
       modalType,
       programs,
       selectedProgram,
+      newPrograms,
+      user,
       openModal,
-      registerProgram,
-      updateProgram,
-      removeProgram,
-      containsKorean,
-      user // 로그인 사용자 정보
+      closeModal,
+      openConfirmationModal,
+      closeConfirmationModal,
+      addProgram,
+      removeNewProgram,
+      registerMultiplePrograms,
+      submitProgramUpdate,
+      removeSelectedProgram,
+      fetchPrograms
     };
   }
 };
 </script>
 
 <style scoped>
-/* 로그인 사용자 정보를 상단에 표시하는 스타일 */
 .user-info {
   text-align: right;
   margin-bottom: 20px;
@@ -190,40 +225,17 @@ export default {
   font-weight: bold;
 }
 
-.container {  
-  width: 60%; /* 너비를 60%로 설정 */
-  max-width: 800px; /* 최대 너비를 800px로 제한 */
-  margin: 0 auto; /* 가로 중앙 정렬 */
-  padding: 80px 0; /* 상하 40px 패딩, 좌우 패딩은 0 */
+.container {
+  width: 60%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 80px 0;
   font-family: 'KCCMurukmuruk', sans-serif;
 }
 
 h1 {
   text-align: center;
-  padding: 20px 0; /* 상하 20px 패딩, 좌우 패딩은 0 */
-}
-
-.button-container {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 20px;
-}
-
-button {
-  margin: 0 10px;
-  padding: 10px 20px;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-button:disabled {
-  background-color: grey;
-  cursor: not-allowed;
-}
-
-.reg_button, .upd_button, .del_button {
-  font-family: 'KCCMurukmuruk', sans-serif;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 그림자 추가 */
+  padding: 20px 0;
 }
 
 table {
@@ -239,5 +251,73 @@ table, th, td {
 th, td {
   padding: 8px;
   text-align: center;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+  background: white;
+  padding: 30px;
+  border-radius: 8px;
+  width: 800px;
+  max-width: 90%;
+  min-height: 400px;
+}
+
+.program-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.program-table th, .program-table td {
+  border: 1px solid #ccc;
+  padding: 10px;
+  text-align: center;
+}
+
+.button-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 20px;
+}
+
+button {
+  font-family: 'KCCMurukmuruk', sans-serif;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  border: none;
+  border-radius: 4px;
+  background-color: #4CAF50;
+  color: white;
+  margin-left: 10px;
+}
+
+button:first-child {
+  margin-left: 0;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
+button:disabled {
+  background-color: grey;
+  cursor: not-allowed;
+}
+
+button:disabled:hover {
+  background-color: grey;
 }
 </style>
