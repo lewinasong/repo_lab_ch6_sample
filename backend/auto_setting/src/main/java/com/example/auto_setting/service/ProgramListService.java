@@ -21,7 +21,10 @@ public class ProgramListService {
     // 직원 번호로 Program List를 조회하여 프로그램 ID 리스트 반환
     public List<Integer> getProgramIdListByEmpNo(@NonNull final String empNo) {
         // DB에서 EMP_NO를 통해 ProgramList를 조회
+        System.out.println("getProgramIdListByEmpNo / empNo : " + empNo);
+
         final ProgramList programList = programListRepository.findByEmpNo(empNo);
+        System.out.println("getProgramIdListByEmpNo / programList : " + programList);
 
         final List<Integer> programIdlist = ProgramListConverter.convertStringToList(programList.getProgramIdList());
 
@@ -29,7 +32,7 @@ public class ProgramListService {
     }
 
     // 직원 번호로 Program List와 Program Name을 조합하여 반환하는 서비스 메서드
-    public List<Map<String, Object>> getProgramListWithNameByEmpNo(@NonNull String empNo) {
+    public List<ProgramDto> getProgramListWithNameByEmpNo(@NonNull String empNo) {
         return programListRepository.findProgramListWithNameByEmpNo(empNo);
     }
 

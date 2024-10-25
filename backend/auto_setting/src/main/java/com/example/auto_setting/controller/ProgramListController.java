@@ -1,5 +1,6 @@
 package com.example.auto_setting.controller;
 
+import com.example.auto_setting.service.ProgramDto;
 import com.example.auto_setting.service.ProgramListService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -10,21 +11,23 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/program-list")
+@RequestMapping("/api/program")
 @RequiredArgsConstructor
 public class ProgramListController {
 
     private final ProgramListService programListService;
-
     @CrossOrigin(origins = "http://10.233.4.217:8089") // 프론트엔드 주소
-
     // 직원 번호로 프로그램 리스트 조회 (GET)
-    @GetMapping("/{empNo}")
+    @GetMapping("PagePgmDtlEmpno/{empNo}")
     public ResponseEntity<List<Integer>> getProgramListByEmpNo(@PathVariable String empNo) {
         try {
+            System.out.println("PagePgmDtlEmpno ");
+
             List<Integer> programList = programListService.getProgramIdListByEmpNo(empNo);
             return new ResponseEntity<>(programList, HttpStatus.OK);
         } catch (Exception e) {
+            System.err.println("Error fetching program list: " + e.getMessage());
+            e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -63,10 +66,13 @@ public class ProgramListController {
     }
 
     // 직원 번호로 Program List + Program Name 조회 (GET)
-    @GetMapping("/with-names/{empNo}")
-    public ResponseEntity<List<Map<String, Object>>> getProgramListWithNameByEmpNo(@PathVariable String empNo) {
+    @GetMapping("/PagePgmDtl/{empNo}")
+    public ResponseEntity<?> getProgramListWithNameByEmpNo(@PathVariable String empNo) {
         try {
-            List<Map<String, Object>> programListWithNames = programListService.getProgramListWithNameByEmpNo(empNo);
+            System.out.println("PagePgmDtl ");
+            List<ProgramDto> programListWithNames = programListService.getProgramListWithNameByEmpNo(empNo);
+            System.out.println("programListWithNames : "+ programListWithNames);
+
             if (programListWithNames.isEmpty()) {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }

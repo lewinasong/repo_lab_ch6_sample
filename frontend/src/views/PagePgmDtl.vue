@@ -26,7 +26,7 @@
               @input="validateOrder(program)" 
             />
           </td>
-          <td>{{ program.name }}</td>
+          <td>{{ program.pgmNm }}</td>
         </tr>
       </tbody>
     </table>
@@ -96,7 +96,7 @@ export default {
     // 프로그램 목록을 API에서 받아오는 메서드
     async fetchPrograms() {
       try {
-        const response = await axios.get('/api/programs'); // API 호출
+        const response = await axios.get(`/api/program/PagePgmDtl/${this.user.employeeNumber}`); // API 호출
         this.programs = response.data; // 프로그램 데이터를 Vue 컴포넌트 상태에 저장
       } catch (error) {
         console.error('프로그램 목록을 불러오는 중 에러 발생:', error); // 에러 처리
