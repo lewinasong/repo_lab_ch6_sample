@@ -18,7 +18,7 @@ public class StatusController {
 
     @Autowired
     private final StatusService statusService;
-    @CrossOrigin(origins = "http://10.233.4.217:8089") // 프론트엔드 주소
+    @CrossOrigin(origins = "http://localhost:8089") // 프론트엔드 주소
 
     //프로그램 실행 여부 적재
     @PostMapping("/insertStatus")
