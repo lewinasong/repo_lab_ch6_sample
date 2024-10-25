@@ -29,11 +29,7 @@ public class StatusController {
 
         try {
             String empNo = programDto.getEmpNo();  // 직원 번호
-<<<<<<< HEAD
-            String pgmId = String.valueOf(programDto.getPgmId());  // 프로그램 ID
-=======
             Long pgmId = programDto.getPgmId();  // 프로그램 ID
->>>>>>> 6fbf540f0751aecf490206fd70f71871fbb5a943
             Integer scssYn = programDto.getScssYn();     // 상태값 (0 또는 1)
 
             // 서비스 호출하여 상태 업데이트 처리
@@ -61,8 +57,4 @@ public class StatusController {
         private String empNo;
     }
 
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 6fbf540f0751aecf490206fd70f71871fbb5a943
