@@ -4,6 +4,11 @@
       <h2>{{ modalTitle }}</h2>
 
       <table class="program-table">
+        <colgroup>
+          <col style="width: 40%;">
+          <col style="width: 40%;">
+          <col style="width: 20%;">
+        </colgroup>
         <thead>
           <tr>
             <th>프로그램명</th>
@@ -114,8 +119,9 @@ export default {
   padding: 30px;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  width: 500px;
-  text-align: center;
+  width: 800px;
+  max-width: 90%;
+  min-height: 400px;
 }
 
 h2 {
@@ -124,16 +130,31 @@ h2 {
   color: #333333;
 }
 
+/* Apply the same table styling from the main table */
 .program-table {
   width: 100%;
   border-collapse: collapse;
   margin-bottom: 20px;
 }
 
+.program-table th {
+  background-color: #C1B6E6; /* Light purple color for headers */
+  color: black; /* Black text for better contrast */
+  padding: 10px;
+}
+
 .program-table th, .program-table td {
-  border: 1px solid #ddd;
+  border: 1px solid black;
   padding: 10px;
   text-align: center;
+}
+
+tbody tr:nth-child(odd) {
+  background-color: #F9F9F9; /* Alternating row colors */
+}
+
+tbody tr:nth-child(even) {
+  background-color: #ECECEC; /* Slightly darker alternating row */
 }
 
 .modal-buttons {
