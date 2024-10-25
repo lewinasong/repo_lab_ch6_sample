@@ -27,6 +27,7 @@
       </thead>
       <tbody>
         <tr v-for="(program, index) in programs" :key="index">
+          <!-- pgmId는 데이터로만 유지 -->
           <td><input type="radio" v-model="selectedProgram" :value="program" /></td>
           <td>{{ program.pgmNm }}</td>
           <td>{{ program.filePath }}</td>
@@ -37,7 +38,7 @@
       </tbody>
     </table>
 
-    <!-- 등록 및 확인 모달 -->
+    <!-- 등록 모달 -->
     <div v-if="showModal && modalType === 'register'" class="modal">
       <div class="modal-content">
         <h2>프로그램 등록</h2>
@@ -75,7 +76,7 @@
       </div>
     </div>
 
-    <!-- 수정 모달 (ModalBase를 수정에 활용) -->
+    <!-- 수정 및 해제 모달 (ModalBase 사용) -->
     <ModalBase v-if="showModal && (modalType === 'update' || modalType === 'remove')"
                :modalType="modalType"
                :program="selectedProgram"
@@ -99,7 +100,7 @@ export default {
     const modalType = ref('');
     const programs = ref([]);
     const selectedProgram = ref(null);
-    const newPrograms = ref([{ pgmNm: '', filePath: '', sleepTime: 0 }]);
+    const newPrograms = ref([{ pgmId: '', pgmNm: '', filePath: '', sleepTime: 0 }]);
 
     const userStore = useUserStore();
     const user = userStore;
@@ -111,7 +112,7 @@ export default {
     };
     const closeModal = () => {
       showModal.value = false;
-      newPrograms.value = [{ pgmNm: '', filePath: '', sleepTime: 0 }];
+      newPrograms.value = [{ pgmId: '', pgmNm: '', filePath: '', sleepTime: 0 }];
     };
     const openConfirmationModal = () => { showConfirmationModal.value = true; };
     const closeConfirmationModal = () => { showConfirmationModal.value = false; };
@@ -153,10 +154,12 @@ export default {
       }
     };
 
-    // 프로그램 수정 제출 (모달 사용)
+    // 프로그램 수정 제출
     const submitProgramUpdate = async (updatedProgram) => {
       try {
         updatedProgram.empNo = user.employeeNumber;
+        updatedProgram.pgmId = selectedProgram.value.pgmId; // selectedProgram의 pgmId를 사용
+
         await axios.post('/api/program/modify', updatedProgram);
         alert('Program updated successfully.');
         fetchPrograms();
@@ -167,7 +170,7 @@ export default {
     };
 
     // 새로운 프로그램 추가 및 삭제
-    const addProgram = () => { newPrograms.value.push({ pgmNm: '', filePath: '', sleepTime: 0 }); };
+    const addProgram = () => { newPrograms.value.push({ pgmId: '', pgmNm: '', filePath: '', sleepTime: 0 }); };
     const removeNewProgram = (index) => { newPrograms.value.splice(index, 1); };
 
     // 프로그램 삭제
@@ -216,6 +219,7 @@ export default {
   }
 };
 </script>
+
 
 <style scoped>
 .user-info {

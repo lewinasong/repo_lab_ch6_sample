@@ -3,7 +3,6 @@
     <div class="modal-content">
       <h2>{{ modalTitle }}</h2>
 
-      <!-- 헤더 추가 -->
       <table class="program-table">
         <thead>
           <tr>
@@ -17,6 +16,12 @@
             <td><input type="text" v-model="programName" placeholder="프로그램명 입력" /></td>
             <td><input type="text" v-model="filePath" placeholder="실행파일 경로 입력" /></td>
             <td><input type="number" v-model="sleepTime" placeholder="대기시간(초)" /></td>
+          </tr>
+          <tr v-if="modalType === 'remove'">
+            <!-- 선택한 프로그램 정보를 표시합니다. -->
+            <td>{{ programName }}</td>
+            <td>{{ filePath }}</td>
+            <td>{{ sleepTime }} 초</td>
           </tr>
         </tbody>
       </table>
