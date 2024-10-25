@@ -1,6 +1,7 @@
 package com.example.auto_setting.persistence;
 
 import com.example.auto_setting.entity.ProgramList;
+import com.example.auto_setting.service.ProgramDto;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -59,15 +60,27 @@ public class ProgramListJdbcRepository implements ProgramListRepository {
         jdbcTemplate.update(sql, empNo);
     }
 
-    // Program List와 Program Name을 조합하여 반환하는 메서드
-    public List<Map<String, Object>> findProgramListWithNameByEmpNo(@NonNull String empNo) {
+    public List<ProgramDto> findProgramListWithNameByEmpNo(@NonNull String empNo) {
         // SQL 쿼리로 Program List와 Program Name을 조회
-        String sql = "SELECT pb.PGM_NM, pl.EXEC_LIST " +
-                     "FROM PGM_EXEC_BASE pl " +
-                     "JOIN PGM_BASE pb ON FIND_IN_SET(pb.PGM_ID, pl.EXEC_LIST) > 0 " +
-                     "WHERE pl.EMP_NO = ?";
-        
-        // SQL 쿼리 실행 및 결과 반환
-        return jdbcTemplate.queryForList(sql, empNo);
+        String sql = "SELECT pb.PGM_ID, pb.PGM_NM, pl.EXEC_LIST, pl.EMP_NO " +
+                "FROM PGM_EXEC_BASE pl " +
+                "JOIN PGM_BASE pb ON FIND_IN_SET(pb.PGM_ID, pl.EXEC_LIST) > 0 " +
+                "WHERE pl.EMP_NO = ?";
+
+        // 쿼리 실행 및 결과를 ProgramDto로 매핑
+        List<ProgramDto> result = jdbcTemplate.query(sql, (rs, rowNum) -> {
+            return ProgramDto.builder()
+                    .empNo(rs.getString("EMP_NO"))
+                    .pgmId(rs.getLong("PGM_ID"))
+                    .pgmNm(rs.getString("PGM_NM"))
+                    .build();
+        }, empNo);
+
+        // 결과가 없으면 예외 처리
+        if (result.isEmpty()) {
+            throw new RuntimeException("해당 직원번호에 대한 프로그램이 존재하지 않습니다.");
+        }
+
+        return result;
     }
 }
