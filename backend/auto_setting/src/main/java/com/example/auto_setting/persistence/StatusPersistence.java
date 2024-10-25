@@ -1,6 +1,10 @@
 package com.example.auto_setting.persistence;
 
 import com.example.auto_setting.service.ProgramDto;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
@@ -50,5 +54,28 @@ public class StatusPersistence {
     }
 
 
+    // empNo와 오늘 날짜를 기반으로 데이터를 조회하는 메서드
+    public List<PGM_EXEC_PTCL> findByEmpNoAndPgmStrDt(String empNo, LocalDate pgmStrDt) {
+        String sql = "SELECT * FROM PGM_EXEC_PTCL WHERE EMP_NO = ? AND PGM_STR_DT = ?";
+
+        return jdbcTemplate.query(
+                sql,
+                new Object[]{empNo, pgmStrDt},
+                (rs, rowNum) -> new PGM_EXEC_PTCL(
+                        rs.getString("EMP_NO"),
+                        rs.getDate("PGM_STR_DT").toLocalDate()
+                )
+        );
+    }
+
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    public static class PGM_EXEC_PTCL {
+        private String empNo;
+        private LocalDate pgmStrDt;
+    }
 
 }
