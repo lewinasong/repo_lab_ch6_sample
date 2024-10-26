@@ -269,7 +269,7 @@ h1 {
 }
 
 table thead th {
-  background-color: #C1B6E6; /* Light purple color for headers */
+  background-color: #fcf4c0; /* Light purple color for headers */
   color: black; /* Black text for better contrast */
   padding: 10px;
 }
