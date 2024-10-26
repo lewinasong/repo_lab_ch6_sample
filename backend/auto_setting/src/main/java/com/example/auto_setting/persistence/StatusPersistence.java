@@ -80,6 +80,6 @@ public class StatusPersistence {
         private String empNo;
         private LocalDate pgmStrDt;
         private Integer scssYn;
-        private String pgmID;
+        private String pgmId;
     }
 }

@@ -28,6 +28,7 @@ public class StatusService {
 
     public List<StatusPersistence.PGM_EXEC_PTCL> findRecordsByEmpNoAndToday(String empNo) {
         LocalDate today = LocalDate.now();
+        //System.out.println("statusPersistence.findByEmpNoAndPgmStrDt(empNo, today) " + statusPersistence.findByEmpNoAndPgmStrDt(empNo, today));
         return statusPersistence.findByEmpNoAndPgmStrDt(empNo, today);
     }
 
