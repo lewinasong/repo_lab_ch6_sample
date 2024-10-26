@@ -27,7 +27,7 @@
           <td>{{ item.pgmNm }}</td> <!-- 프로그램명 표시 -->
           <td :class="item.scssYn === 1 ? 'success' : item.scssYn === 0 ? 'failure' : 'running'">
             <!-- 완료, 확인필요, 기동중 표시 -->
-            {{ item.scssYn === 1 ? '완료' : item.scssYn === 0 ? '확인필요' : '기동중' }}
+            {{ item.scssYn === 1 ? '완료' : item.scssYn === 0 ? '확인필요' : '실행된 프로그램이 없습니다' }}
           </td>
         </tr>
       </tbody>
