@@ -57,8 +57,6 @@ public class StatusPersistence {
     // empNo와 오늘 날짜를 기반으로 데이터를 조회하는 메서드
     public List<PGM_EXEC_PTCL> findByEmpNoAndPgmStrDt(String empNo, LocalDate pgmStrDt) {
         String sql = "SELECT * FROM PGM_EXEC_PTCL WHERE EMP_NO = ? AND PGM_STR_DT = ?";
-<<<<<<< HEAD
-=======
 
         return jdbcTemplate.query(
                 sql,
@@ -84,26 +82,4 @@ public class StatusPersistence {
         private Integer scssYn;
         private String pgmID;
     }
->>>>>>> 6fbf540f0751aecf490206fd70f71871fbb5a943
-
-        return jdbcTemplate.query(
-                sql,
-                new Object[]{empNo, pgmStrDt},
-                (rs, rowNum) -> new PGM_EXEC_PTCL(
-                        rs.getString("EMP_NO"),
-                        rs.getDate("PGM_STR_DT").toLocalDate()
-                )
-        );
-    }
-
-
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    @Builder
-    public static class PGM_EXEC_PTCL {
-        private String empNo;
-        private LocalDate pgmStrDt;
-    }
-
 }

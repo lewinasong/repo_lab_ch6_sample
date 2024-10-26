@@ -15,11 +15,8 @@ public class StatusService {
     private final StatusPersistence statusPersistence;
 
     //프로그램 실행 여부 적재
-<<<<<<< HEAD
-    public void insertProgramStatus(String empNo, String pgmId, Integer scssYn) {
-=======
     public void insertProgramStatus(String empNo, Long pgmId, Integer scssYn) {
->>>>>>> 6fbf540f0751aecf490206fd70f71871fbb5a943
+
         System.out.println("Insert Status Service");
 
         try {
@@ -33,14 +30,8 @@ public class StatusService {
         LocalDate today = LocalDate.now();
         return statusPersistence.findByEmpNoAndPgmStrDt(empNo, today);
     }
-<<<<<<< HEAD
-
-
-}
-=======
 
 
 }
 
 
->>>>>>> 6fbf540f0751aecf490206fd70f71871fbb5a943
