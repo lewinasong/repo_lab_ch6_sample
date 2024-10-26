@@ -61,7 +61,7 @@
           <tbody>
             <tr v-for="(program, index) in newPrograms" :key="index">
               <td><input type="text" v-model="program.pgmNm" placeholder="프로그램명을 입력하세요" required /></td>
-              <td><input type="text" v-model="program.filePath" placeholder="파일 경로를 입력하세요" required /></td>
+              <td><input type="text" v-model="program.filePath" placeholder="파일 경로를 입력하세요" required @input="validateFilePath(program)" /></td>
               <td>
                 <input
                   type="text"
@@ -143,40 +143,49 @@ export default {
       }
     };
 
-    const registerMultiplePrograms = async () => {
-    try {
-      const englishOnlyRegex = /^[A-Za-z0-9_ ]*$/;
-      const filePathRegex = /^[A-Za-z0-9_/\\:.-]*$/; // Allows English letters, numbers, and certain special characters
-
-      for (const program of newPrograms.value) {
-        // Check for any empty fields
-        if (!program.pgmNm || !program.filePath || !program.sleepTime) {
-          alert('입력되지 않은 항목이 존재합니다. 확인 후 다시 등록해주세요');
-          return;
-        }
-
-        // Additional validation checks
-        if (program.sleepTime < 3) {
-          alert('대기시간은 3초 이상 입력해야 합니다.');
-          return;
-        }
-        if (!englishOnlyRegex.test(program.pgmNm)) {
-          alert('프로그램명은 영문만 가능합니다. 확인 후 다시 등록해주세요.');
-          return;
-        }
-        if (!filePathRegex.test(program.filePath)) {
-          alert('실행경로는 영문만 가능합니다. 확인 후 다시 등록해주세요.');
-          return;
-        }
-
-        const programDto = {
-          pgmNm: program.pgmNm,
-          empNo: user.employeeNumber,
-          filePath: program.filePath,
-          sleepTime: program.sleepTime
-        };
-        await axios.post('/api/program/register', programDto);
+    const validateFilePath = (program) => {
+      const filePathRegex = /^[A-Za-z0-9_/\\:.\-\s]*$/; // 공백 허용
+      if (!filePathRegex.test(program.filePath)) {
+        alert('실행 경로는 영문, 숫자, /, \\, :, ., -, 그리고 공백만 입력 가능합니다.');
+        program.filePath = program.filePath.replace(/^[A-Za-z0-9_/\\:.\-\s]/g, ''); // 허용되지 않은 문자 제거
       }
+    };
+
+    const registerMultiplePrograms = async () => {
+      try {
+        const englishOnlyRegex = /^[A-Za-z0-9_ ]*$/;
+
+        for (const program of newPrograms.value) {
+          if (!program.pgmNm || !program.filePath || !program.sleepTime) {
+            alert('입력되지 않은 항목이 존재합니다. 확인 후 다시 등록해주세요');
+            return;
+          }
+
+          if (program.sleepTime < 3) {
+            alert('대기시간은 3초 이상 입력해야 합니다.');
+            return;
+          }
+
+           // 숫자가 아닌 문자가 포함되어 있으면 경고 메시지 출력
+          if (/[^0-9]/.test(program.sleepTime)) {
+            alert("실행대기시간은 숫자만 입력 가능합니다.");
+            // 숫자 이외의 문자를 모두 제거
+            program.sleepTime = program.sleepTime.replace(/[^0-9]/g, '');
+          }
+          
+          if (!englishOnlyRegex.test(program.pgmNm)) {
+            alert('프로그램명은 영문만 가능합니다. 확인 후 다시 등록해주세요.');
+            return;
+          }
+
+          const programDto = {
+            pgmNm: program.pgmNm,
+            empNo: user.employeeNumber,
+            filePath: program.filePath,
+            sleepTime: program.sleepTime
+          };
+          await axios.post('/api/program/register', programDto);
+        }
 
         fetchPrograms();
         closeModal();
@@ -240,12 +249,12 @@ export default {
       registerMultiplePrograms,
       submitProgramUpdate,
       removeSelectedProgram,
-      fetchPrograms
+      fetchPrograms,
+      validateFilePath
     };
   }
 };
 </script>
-
 
 <style scoped>
 .user-info {
@@ -256,8 +265,8 @@ export default {
 }
 
 .container {
-  width: 80%; /* Change from 60% to 80% or use a fixed width like 1200px */
-  max-width: 1200px; /* Increase the max width if necessary */
+  width: 80%;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 80px 0;
   font-family: 'KCCMurukmuruk', sans-serif;
@@ -269,8 +278,8 @@ h1 {
 }
 
 table thead th {
-  background-color: #fcf4c0; /* Light purple color for headers */
-  color: black; /* Black text for better contrast */
+  background-color: #fcf4c0;
+  color: black;
   padding: 10px;
 }
 
@@ -289,11 +298,11 @@ th, td {
 }
 
 tbody tr:nth-child(odd) {
-  background-color: #F9F9F9; /* Alternating row colors for better readability */
+  background-color: #F9F9F9;
 }
 
 tbody tr:nth-child(even) {
-  background-color: #ECECEC; /* Slightly darker alternating row */
+  background-color: #ECECEC;
 }
 
 .modal {
