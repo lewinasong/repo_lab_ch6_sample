@@ -1,5 +1,5 @@
 <template>
-  <div class="modal-overlay" >
+  <div class="modal-overlay">
     <div class="modal-content">
       <h2>{{ modalTitle }}</h2>
 
@@ -88,20 +88,33 @@ export default {
       if (isNaN(sleepTimeNumber) || sleepTimeNumber < 3) {
         alert("실행대기시간은 3초 이상 입력 가능합니다.");
         this.sleepTime = "3";
+      } else if (sleepTimeNumber > 60) {
+        alert("실행대기시간은 60초 이내로 입력 가능합니다.");
+        this.sleepTime = "60";
       }
     },
     validateProgramName() {
-      const allowedChars = /^[A-Za-z0-9_]*$/; 
-      if (!allowedChars.test(this.programName)) {
-        alert("프로그램명은 영문, 숫자, 언더스코어(_)만 가능합니다.");
-        this.programName = this.programName.replace(/[^A-Za-z0-9_]/g, '');
+      if (/\s/.test(this.programName)) {
+        alert('프로그램명은 공백없이 입력해야합니다.');
+        this.programName = this.programName.replace(/\s/g, '');
+      } else {
+        const allowedChars = /^[A-Za-z0-9_]*$/;
+        if (!allowedChars.test(this.programName)) {
+          alert("프로그램명은 영문, 숫자, 언더스코어(_)만 가능합니다.");
+          this.programName = this.programName.replace(/[^A-Za-z0-9_]/g, '');
+        }
       }
     },
     validateFilePath() {
-      const allowedChars = /^[A-Za-z0-9_/\\:.\-\s]*$/;
-      if (!allowedChars.test(this.filePath)) {
-        alert("실행파일 경로는 영문, 숫자, /, \\, :, ., -, 공백만 입력 가능합니다.");
-        this.filePath = this.filePath.replace(/[^A-Za-z0-9_/\\:.\-\s]/g, '');
+      if (/\s/.test(this.filePath)) {
+        alert('실행 경로는 공백없이 입력해야합니다.');
+        this.filePath = this.filePath.replace(/\s/g, '');
+      } else {
+        const allowedChars = /^[A-Za-z0-9_/\\:.-]*$/;
+        if (!allowedChars.test(this.filePath)) {
+          alert("실행파일 경로는 영문, 숫자, /, \\, :, ., -만 입력 가능합니다.");
+          this.filePath = this.filePath.replace(/[^A-Za-z0-9_/\\:.-]/g, '');
+        }
       }
     }
   },
@@ -156,7 +169,7 @@ h2 {
 }
 
 .program-table th {
-  background-color: #FCF4C0; 
+  background-color: #FCF4C0;
   color: black;
   padding: 10px;
 }
@@ -190,6 +203,7 @@ button {
   color: white;
   font-size: 16px;
   cursor: pointer;
+  font-family: 'KCCMurukmuruk', sans-serif; /* 폰트 적용 */
 }
 
 button:hover {

@@ -2,7 +2,7 @@
   <div class="container">
     <!-- 로그인 사용자 정보 -->
     <div class="user-info">
-      <p>로그인 사용자: {{ user.employeeNumber || "정보 없음" }}</p>
+      <p>로그인 사용자: {{ user.name ? user.name + " (" + user.employeeNumber + ")" : "정보 없음" }}</p>
     </div>
 
     <h1>프로그램 실행순서 설정</h1>
@@ -33,7 +33,7 @@
     <button @click="sortPrograms">변경 후 프로그램 순서 확인</button>
 
     <div v-if="sortedPrograms.length > 0">
-      <h2>변경 후 프로그램 실행 순서</h2>
+      <h2>변경 후 프로그램 실행순서</h2>
       <table class="fixed-table">
         <thead>
           <tr>
@@ -104,6 +104,11 @@ export default {
         alert('0 이상의 숫자를 입력하세요.');
       }
     },
+    hasEmptyOrders() {
+      const result = this.programs.some((program) => program.order === '');
+      return result;
+    },
+    
     hasDuplicateOrders() {
       const orders = this.programs
         .map((program) => program.order)
@@ -111,31 +116,36 @@ export default {
       const uniqueOrders = new Set(orders);
       return uniqueOrders.size !== orders.length;
     },
-    hasEmptyOrders() {
-      return this.programs.some((program) => program.order === '');
-    },
+    
     hasOrderExceedingProgramCount() {
       const maxOrder = Math.max(
         ...this.programs.map((program) => parseInt(program.order) || 0)
       );
       return maxOrder > this.programs.length;
     },
+
     sortPrograms() {
       console.log("정렬 전 programs:", this.programs);
 
+      // 순번 입력이 되지 않은 항목이 있는지 우선 확인
       if (this.hasEmptyOrders()) {
-        alert('순번입력이 완료되지 않았습니다. 확인 후 진행해주세요.');
+        alert('순번입력이 안된 항목이 있습니다. 확인후 진행해주세요.');
         return;
       }
+
+      // 중복된 순번 확인
       if (this.hasDuplicateOrders()) {
         alert('중복된 순번이 있습니다. 순번을 확인해주세요.');
         return;
       }
+
+      // 순번이 프로그램 개수를 초과하는지 확인
       if (this.hasOrderExceedingProgramCount()) {
         alert('순번은 ' + this.programs.length + ' 이하로 입력해주세요');
         return;
       }
 
+      // 모든 조건을 통과한 경우 정렬된 프로그램 목록 생성
       this.sortedPrograms = this.programs
         .filter((program) => program.order !== '' && parseInt(program.order) > 0)
         .sort((a, b) => parseInt(a.order) - parseInt(b.order));
@@ -175,10 +185,10 @@ export default {
           programOrder: orderedProgramIds,
         });
         
-        alert("프로그램 순서가 업데이트되었습니다.");
+        alert("프로그램 실행순서가 저장되었습니다.");
       } catch (error) {
         console.error("프로그램 순서 업데이트 중 오류 발생:", error.response || error.message);
-        alert("프로그램 순서 업데이트에 실패했습니다.");
+        alert("프로그램 실행순서 설정이 실패했습니다.");
       }
 
       this.showSaveModal = false;
@@ -190,7 +200,7 @@ export default {
 <style scoped>
 /* 스타일 정의 */
 .user-info {
-  text-align: right;
+  text-align: left;
   margin-bottom: 20px;
   font-size: 16px;
   font-weight: bold;
@@ -249,6 +259,7 @@ button {
   padding: 10px 20px;
   font-size: 16px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  font-family: 'KCCMurukmuruk', sans-serif;
 }
 
 .save_button {

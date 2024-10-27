@@ -1,9 +1,9 @@
 <template>
   <div class="container">
     <!-- 로그인 사용자 정보 -->
-     <div class="user-info">
+    <div class="user-info">
       <p>로그인 사용자: {{ user.name ? user.name + " (" + user.employeeNumber + ")" : "정보 없음" }}</p>
-     </div>
+    </div>
 
     <h1>프로그램 목록</h1>
 
@@ -60,7 +60,7 @@
           </thead>
           <tbody>
             <tr v-for="(program, index) in newPrograms" :key="index">
-              <td><input type="text" v-model="program.pgmNm" placeholder="프로그램명을 입력하세요" required  @input="validateProgramName(program)" /></td>
+              <td><input type="text" v-model="program.pgmNm" placeholder="프로그램명을 입력하세요" required @input="validateProgramName(program)" /></td>
               <td><input type="text" v-model="program.filePath" placeholder="파일 경로를 입력하세요" required @input="validateFilePath(program)" /></td>
               <td>
                 <input
@@ -75,7 +75,7 @@
           </tbody>
         </table>
         <button type="button" @click="addProgram">프로그램 추가</button>
-        <button type="button" @click="openConfirmationModal">등록</button>
+        <button type="button" @click="registerMultiplePrograms">등록</button>
         <button type="button" @click="closeModal">취소</button>
       </div>
     </div>
@@ -124,11 +124,10 @@ export default {
     const openModal = (type) => {
       modalType.value = type;
       showModal.value = true;
-      
-      // 선택된 프로그램이 있을 때 수정 모달이 열리면 프로그램의 최신 데이터를 복사
-       if (type === 'update' && selectedProgram.value) {
-       selectedProgram.value = { ...selectedProgram.value }; // 깊은 복사로 최신 데이터 반영
-  }
+
+      if (type === 'update' && selectedProgram.value) {
+        selectedProgram.value = { ...selectedProgram.value };
+      }
     };
     const closeModal = () => {
       showModal.value = false;
@@ -158,35 +157,38 @@ export default {
         program.filePath = program.filePath.replace(/[^A-Za-z0-9_/\\:.-]/g, '');
       }
     };
-    
-const validateProgramName = (program) => {
-  if (/\s/.test(program.pgmNm)) {
-    alert('프로그램명은 공백없이 입력해야합니다.');
-    program.pgmNm = program.pgmNm.replace(/\s/g, ''); // 공백 제거
-  }
-};
+
+    const validateProgramName = (program) => {
+      const allowedChars = /^[A-Za-z0-9_.-]*$/;
+
+      if (/\s/.test(program.pgmNm)) {
+        alert('프로그램명은 공백 없이 입력해야 합니다.');
+        program.pgmNm = program.pgmNm.replace(/\s/g, '');
+      } else if (!allowedChars.test(program.pgmNm)) {
+        alert('프로그램명은 영문, 숫자, ., _, - 만 입력 가능합니다.');
+        program.pgmNm = program.pgmNm.replace(/[^A-Za-z0-9_.-]/g, '');
+      }
+    };
+
+    const limitSleepTime = (program) => {
+      const sleepTimeNumber = parseInt(program.sleepTime, 10);
+      if (isNaN(sleepTimeNumber) || sleepTimeNumber < 3 || sleepTimeNumber > 60) {
+        alert("실행 대기시간은 3초 이상 60초 이내로 입력해야 합니다.");
+        program.sleepTime = sleepTimeNumber < 3 ? "3" : "60";
+      }
+    };
 
     const registerMultiplePrograms = async () => {
       try {
-        const englishOnlyRegex = /^[A-Za-z0-9_ ]*$/;
-
         for (const program of newPrograms.value) {
           if (!program.pgmNm || !program.filePath || !program.sleepTime) {
             alert('입력되지 않은 항목이 존재합니다. 확인 후 다시 등록해주세요');
             return;
           }
 
-          if (program.sleepTime < 3) {
-            alert('대기시간은 3초 이상 입력해야 합니다.');
-            return;
-          }
-
-          if (/[^0-9]/.test(program.sleepTime)) {
-            alert("실행대기시간은 숫자만 입력 가능합니다.");
-            program.sleepTime = program.sleepTime.replace(/[^0-9]/g, '');
-          }
-          if (!englishOnlyRegex.test(program.pgmNm)) {
-            alert('프로그램명은 영문만 가능합니다. 확인 후 다시 등록해주세요.');
+          const sleepTimeNumber = parseInt(program.sleepTime, 10);
+          if (sleepTimeNumber < 3 || sleepTimeNumber > 60) {
+            alert('대기시간은 3초 이상 60초 이내로 입력해야 합니다.');
             return;
           }
 
@@ -240,7 +242,6 @@ const validateProgramName = (program) => {
       }
     };
 
-    // Method to format date as YYYY-MM-DD
     const formatDate = (dateString) => {
       const date = new Date(dateString);
       return date.toISOString().split('T')[0];
@@ -270,7 +271,8 @@ const validateProgramName = (program) => {
       fetchPrograms,
       validateFilePath,
       validateProgramName,
-      formatDate // Exporting formatDate method for use in template
+      limitSleepTime,
+      formatDate
     };
   }
 };

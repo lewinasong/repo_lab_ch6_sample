@@ -2,7 +2,7 @@
   <div class="modal-overlay" @click.self="closeModal">
     <div class="modal-content">
       <h2>저장 확인</h2>
-      <p>설정한 순서대로 프로그램 실행 파일을 생성하시겠습니까?</p>
+      <p>프로그램 실행순서를 저장하시겠습니까?</p>
       <div class="modal-buttons">
         <button @click="confirmSave">확인</button>
         <button @click="closeModal">취소</button>
@@ -53,5 +53,7 @@ export default {
 button {
   margin: 0 10px;
   padding: 10px;
+  font-family: 'KCCMurukmuruk', sans-serif;
+  font-size: 16px;
 }
 </style>
