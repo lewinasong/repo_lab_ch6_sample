@@ -4,7 +4,7 @@
       <p>로그인 사용자: {{ user.name ? user.name + " (" + user.employeeNumber + ")" : "정보 없음" }}</p>
       <button @click="downloadBatFile" class="download-btn">
         <span class="icon">⬇️</span> 실행 프로그램 다운로드
-      </button> <!-- 실행 프로그램 다운로드 버튼 -->
+      </button>
     </div>
 
     <h1>수행 프로그램 목록</h1>
@@ -24,9 +24,8 @@
       <tbody>
         <tr v-for="(item, index) in programList" :key="index">
           <td>{{ index + 1 }}</td>
-          <td>{{ item.pgmNm }}</td> <!-- 프로그램명 표시 -->
+          <td>{{ item.pgmNm }}</td>
           <td :class="item.scssYn === 1 ? 'success' : item.scssYn === 0 ? 'failure' : 'running'">
-            <!-- 완료, 확인필요, 기동중 표시 -->
             {{ item.scssYn === 1 ? '완료' : item.scssYn === 0 ? '확인필요' : '실행된 프로그램이 없습니다' }}
           </td>
         </tr>
@@ -54,6 +53,8 @@ export default {
     return {
       programList: [],
       isLoading: false,
+      errorMessage: '',
+      executionDate: '',
     };
   },
   mounted() {
@@ -66,25 +67,21 @@ export default {
         const programResponse = await axios.get(`/api/program/PagePgmBase/${this.user.employeeNumber}`);
         this.programList = programResponse.data.map((program) => ({
           ...program,
-          scssYn: null, // 성공 여부는 두 번째 API로부터 받을 예정
+          scssYn: null,
         }));
-
-        console.log("Program List:", this.programList); // 첫 번째 API 응답 확인
 
         const statusResponse = await axios.get(`/api/searchByEmpNo/${this.user.employeeNumber}`);
         const statusData = statusResponse.data;
-        console.log("Status Data:", statusData); // 두 번째 API 응답 확인
 
         const execListResponse = await axios.get(`/api/program/PagePgmDtlEmpno/${this.user.employeeNumber}`);
-        const execOrderList = execListResponse.data; // 프로그램 ID 리스트를 순서대로 가져옴
-        console.log("Exec Order List:", execOrderList); // 세 번째 API 응답 확인
+        const execOrderList = execListResponse.data;
 
         const orderedProgramList = execOrderList.map((pgmId) => {
           const program = this.programList.find((item) => item.pgmId.toString() === pgmId.toString()) || {};
           const matchingStatus = statusData.find((status) => status.pgmId.toString() === pgmId.toString());
           return {
             ...program,
-            scssYn: matchingStatus ? matchingStatus.scssYn : null, // 매칭되지 않으면 null로 설정
+            scssYn: matchingStatus ? matchingStatus.scssYn : null,
           };
         });
 
@@ -98,34 +95,38 @@ export default {
     downloadBatFile() {
       const empNo = this.user.employeeNumber || '정보 없음';
       const batFileContent = `
-@echo off
-setlocal enabledelayedexpansion
-set empNo=${empNo}
-echo Calling API to fetch program information for employee number %empNo%
-curl -X GET "http://localhost:8080/api/programs/%empNo%" -H "Content-Type: application/json" -o programs.json
-echo Showing programs.json content:
-type programs.json
-echo Extracting program sequence, IDs, file paths, and sleep times...
-for /f "delims=" %%i in ('jq -r ".[] | (.sequence | tostring) + \\" \\" + (.pgmId | tostring) + \\" \\" + .filePath + \\" \\" + (.sleepTime | tostring)" programs.json') do (
-    for /f "tokens=1,2,3,4" %%a in ("%%i") do (
-        echo Running program sequence: %%a, pgmId: %%b for empNo: %empNo% at %%c with sleep time: %%d seconds
-        call "%%c"
-        if errorlevel 1 (
-            set scssYn=0
-            echo Program sequence: %%a, pgmId: %%b for empNo: %empNo% failed, scssYn: !scssYn!
-        ) else (
-            set scssYn=1
-            echo Program sequence: %%a, pgmId: %%b for empNo: %empNo% succeeded, scssYn: !scssYn!
-        )
-        echo Calling API to insert program status for empNo: %empNo%, pgmId: %%b, scssYn: !scssYn!
-        curl -X POST "http://localhost:8080/api/insertStatus" ^
-            -H "Content-Type: application/json" ^
-            -d "{\\"empNo\\": \\"%empNo%\\", \\"pgmId\\": \\"%%b\\", \\"scssYn\\": !scssYn!}"
-        echo Sleeping for %%d seconds...
-        timeout /t %%d /nobreak >nul
-    )
-)
-pause
+  @echo off
+  setlocal enabledelayedexpansion
+  set empNo=${empNo}
+  echo Calling API to fetch program information for employee number %empNo%
+  curl -X GET "http://localhost:8080/api/programs/%empNo%" -H "Content-Type: application/json" -o programs.json
+  echo Showing programs.json content:
+  type programs.json
+
+  echo Extracting program sequence, IDs, file paths, and sleep times...
+  for /f "delims=" %%i in ('jq -r ".[] | (.sequence | tostring) + \\" \\" + (.pgmId | tostring) + \\" \\" + .filePath + \\" \\" + (.sleepTime | tostring)" programs.json') do (
+      for /f "tokens=1,2,3,4" %%a in ("%%i") do (
+          echo Running program sequence: %%a, pgmId: %%b for empNo: %empNo% at "%%c" with sleep time: %%d seconds
+          call "%%c"
+          
+          if errorlevel 1 (
+              set scssYn=0
+              echo Program sequence: %%a, pgmId: %%b for empNo: %empNo% failed, scssYn: !scssYn!
+          ) else (
+              set scssYn=1
+              echo Program sequence: %%a, pgmId: %%b for empNo: %empNo% succeeded, scssYn: !scssYn!
+          )
+          
+          echo Calling API to insert program status for empNo: %empNo%, pgmId: %%b, scssYn: !scssYn!
+          curl -X POST "http://localhost:8080/api/insertStatus" ^
+              -H "Content-Type: application/json" ^
+              -d "{\\"empNo\\": \\"%empNo%\\", \\"pgmId\\": \\"%%b\\", \\"scssYn\\": !scssYn!}"
+          
+          echo Sleeping for %%d seconds...
+          timeout /t %%d /nobreak >nul
+      )
+  )
+  pause
       `;
       const blob = new Blob([batFileContent], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
@@ -133,7 +134,7 @@ pause
       link.href = url;
       link.download = 'PC자동실행프로그램.bat';
       link.click();
-      URL.revokeObjectURL(url); // 다운로드 후 URL 제거
+      URL.revokeObjectURL(url);
     },
   },
 };

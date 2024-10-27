@@ -1,5 +1,5 @@
 <template>
-  <div class="modal-overlay" @click.self="close">
+  <div class="modal-overlay" >
     <div class="modal-content">
       <h2>{{ modalTitle }}</h2>
 
@@ -18,12 +18,11 @@
         </thead>
         <tbody>
           <tr v-if="modalType === 'register' || modalType === 'update'">
-            <td><input type="text" v-model="programName" placeholder="프로그램명 입력" /></td>
-            <td><input type="text" v-model="filePath" placeholder="실행파일 경로 입력" /></td>
-            <td><input type="number" v-model="sleepTime" placeholder="대기시간(초)" /></td>
+            <td><input type="text" v-model="programName" placeholder="프로그램명 입력" @input="validateProgramName" /></td>
+            <td><input type="text" v-model="filePath" placeholder="실행파일 경로 입력" @input="validateFilePath" /></td>
+            <td><input type="text" v-model="sleepTime" placeholder="대기시간(초)" @blur="validateSleepTime" /></td>
           </tr>
           <tr v-if="modalType === 'remove'">
-            <!-- 선택한 프로그램 정보를 표시합니다. -->
             <td>{{ programName }}</td>
             <td>{{ filePath }}</td>
             <td>{{ sleepTime }} 초</td>
@@ -51,9 +50,9 @@ export default {
   },
   data() {
     return {
-      programName: this.program ? this.program.pgmNm : '', // 프로그램명이 보이도록 수정
+      programName: this.program ? this.program.pgmNm : '',
       filePath: this.program ? this.program.filePath : '',
-      sleepTime: this.program ? this.program.sleepTime : 0,
+      sleepTime: this.program ? this.program.sleepTime : ''
     };
   },
   computed: {
@@ -83,17 +82,37 @@ export default {
     },
     close() {
       this.$emit('close');
+    },
+    validateSleepTime() {
+      const sleepTimeNumber = parseInt(this.sleepTime, 10);
+      if (isNaN(sleepTimeNumber) || sleepTimeNumber < 3) {
+        alert("실행대기시간은 3초 이상 입력 가능합니다.");
+        this.sleepTime = "3";
+      }
+    },
+    validateProgramName() {
+      const allowedChars = /^[A-Za-z0-9_]*$/; 
+      if (!allowedChars.test(this.programName)) {
+        alert("프로그램명은 영문, 숫자, 언더스코어(_)만 가능합니다.");
+        this.programName = this.programName.replace(/[^A-Za-z0-9_]/g, '');
+      }
+    },
+    validateFilePath() {
+      const allowedChars = /^[A-Za-z0-9_/\\:.\-\s]*$/;
+      if (!allowedChars.test(this.filePath)) {
+        alert("실행파일 경로는 영문, 숫자, /, \\, :, ., -, 공백만 입력 가능합니다.");
+        this.filePath = this.filePath.replace(/[^A-Za-z0-9_/\\:.\-\s]/g, '');
+      }
     }
   },
   watch: {
-    // 모달이 열릴 때마다 프로그램 데이터가 새로 반영되도록 설정
     program: {
       immediate: true,
       handler(newProgram) {
         if (newProgram) {
           this.programName = newProgram.pgmNm || '';
           this.filePath = newProgram.filePath || '';
-          this.sleepTime = newProgram.sleepTime || 0;
+          this.sleepTime = newProgram.sleepTime || '';
         }
       }
     }
@@ -130,7 +149,6 @@ h2 {
   color: #333333;
 }
 
-/* Apply the same table styling from the main table */
 .program-table {
   width: 100%;
   border-collapse: collapse;
@@ -138,8 +156,8 @@ h2 {
 }
 
 .program-table th {
-  background-color: #C1B6E6; /* Light purple color for headers */
-  color: black; /* Black text for better contrast */
+  background-color: #FCF4C0; 
+  color: black;
   padding: 10px;
 }
 
@@ -150,11 +168,11 @@ h2 {
 }
 
 tbody tr:nth-child(odd) {
-  background-color: #F9F9F9; /* Alternating row colors */
+  background-color: #F9F9F9;
 }
 
 tbody tr:nth-child(even) {
-  background-color: #ECECEC; /* Slightly darker alternating row */
+  background-color: #ECECEC;
 }
 
 .modal-buttons {

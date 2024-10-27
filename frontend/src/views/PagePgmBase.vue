@@ -16,12 +16,12 @@
 
     <table>
       <colgroup>
-        <col style="width: 10%;"> <!-- First column: 선택 -->
-        <col style="width: 20%;"> <!-- Second column: 프로그램명 -->
-        <col style="width: 30%;"> <!-- Third column: 실행파일 경로 -->
-        <col style="width: 15%;"> <!-- Fourth column: 실행 대기시간 -->
-        <col style="width: 10%;"> <!-- Fifth column: 등록일 -->
-        <col style="width: 15%;"> <!-- Sixth column: 수정일 -->
+        <col style="width: 10%;">
+        <col style="width: 20%;">
+        <col style="width: 30%;">
+        <col style="width: 15%;">
+        <col style="width: 12.5%;">
+        <col style="width: 12.5%;">
       </colgroup>
       <thead>
         <tr>
@@ -39,8 +39,8 @@
           <td>{{ program.pgmNm }}</td>
           <td>{{ program.filePath }}</td>
           <td>{{ program.sleepTime }} 초</td>
-          <td>{{ program.sysRegDtm }}</td>
-          <td>{{ program.sysUpdDtm }}</td>
+          <td>{{ formatDate(program.sysRegDtm) }}</td>
+          <td>{{ formatDate(program.sysUpdDtm) }}</td>
         </tr>
       </tbody>
     </table>
@@ -60,7 +60,7 @@
           </thead>
           <tbody>
             <tr v-for="(program, index) in newPrograms" :key="index">
-              <td><input type="text" v-model="program.pgmNm" placeholder="프로그램명을 입력하세요" required /></td>
+              <td><input type="text" v-model="program.pgmNm" placeholder="프로그램명을 입력하세요" required  @input="validateProgramName(program)" /></td>
               <td><input type="text" v-model="program.filePath" placeholder="파일 경로를 입력하세요" required @input="validateFilePath(program)" /></td>
               <td>
                 <input
@@ -124,6 +124,11 @@ export default {
     const openModal = (type) => {
       modalType.value = type;
       showModal.value = true;
+      
+      // 선택된 프로그램이 있을 때 수정 모달이 열리면 프로그램의 최신 데이터를 복사
+       if (type === 'update' && selectedProgram.value) {
+       selectedProgram.value = { ...selectedProgram.value }; // 깊은 복사로 최신 데이터 반영
+  }
     };
     const closeModal = () => {
       showModal.value = false;
@@ -144,12 +149,22 @@ export default {
     };
 
     const validateFilePath = (program) => {
-      const filePathRegex = /^[A-Za-z0-9_/\\:.\-\s]*$/; // 공백 허용
-      if (!filePathRegex.test(program.filePath)) {
-        alert('실행 경로는 영문, 숫자, /, \\, :, ., -, 그리고 공백만 입력 가능합니다.');
-        program.filePath = program.filePath.replace(/^[A-Za-z0-9_/\\:.\-\s]/g, ''); // 허용되지 않은 문자 제거
+      const filePathRegex = /^[A-Za-z0-9_/\\:.-]*$/;
+      if (/\s/.test(program.filePath)) {
+        alert('실행 경로는 공백없이 입력해야합니다.');
+        program.filePath = '';
+      } else if (!filePathRegex.test(program.filePath)) {
+        alert('실행 경로는 영문, 숫자, /, \\, :, ., -만 입력 가능합니다.');
+        program.filePath = program.filePath.replace(/[^A-Za-z0-9_/\\:.-]/g, '');
       }
     };
+    
+const validateProgramName = (program) => {
+  if (/\s/.test(program.pgmNm)) {
+    alert('프로그램명은 공백없이 입력해야합니다.');
+    program.pgmNm = program.pgmNm.replace(/\s/g, ''); // 공백 제거
+  }
+};
 
     const registerMultiplePrograms = async () => {
       try {
@@ -166,10 +181,8 @@ export default {
             return;
           }
 
-           // 숫자가 아닌 문자가 포함되어 있으면 경고 메시지 출력
           if (/[^0-9]/.test(program.sleepTime)) {
             alert("실행대기시간은 숫자만 입력 가능합니다.");
-            // 숫자 이외의 문자를 모두 제거
             program.sleepTime = program.sleepTime.replace(/[^0-9]/g, '');
           }
           if (!englishOnlyRegex.test(program.pgmNm)) {
@@ -227,6 +240,12 @@ export default {
       }
     };
 
+    // Method to format date as YYYY-MM-DD
+    const formatDate = (dateString) => {
+      const date = new Date(dateString);
+      return date.toISOString().split('T')[0];
+    };
+
     onMounted(() => {
       fetchPrograms();
     });
@@ -249,7 +268,9 @@ export default {
       submitProgramUpdate,
       removeSelectedProgram,
       fetchPrograms,
-      validateFilePath
+      validateFilePath,
+      validateProgramName,
+      formatDate // Exporting formatDate method for use in template
     };
   }
 };
@@ -277,7 +298,7 @@ h1 {
 }
 
 table thead th {
-  background-color: #fcf4c0;
+  background-color: #FCF4C0;
   color: black;
   padding: 10px;
 }
