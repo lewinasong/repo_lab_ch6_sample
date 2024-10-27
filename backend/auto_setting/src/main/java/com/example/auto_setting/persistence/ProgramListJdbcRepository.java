@@ -49,9 +49,12 @@ public class ProgramListJdbcRepository implements ProgramListRepository {
     }
 
     @Override
-    public void update(@NonNull final String empNo, @NonNull final String programIdList) {
+    public void update(String empNo, String programIdList) {
         final String sql = "UPDATE PGM_EXEC_BASE SET EXEC_LIST = ? WHERE EMP_NO = ?";
-        jdbcTemplate.update(sql, programIdList, empNo);
+        int rowsAffected = jdbcTemplate.update(sql, programIdList, empNo);
+        if (rowsAffected == 0) {
+            throw new RuntimeException("Update failed: no rows affected.");
+        }
     }
 
     @Override

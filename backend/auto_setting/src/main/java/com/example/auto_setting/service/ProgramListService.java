@@ -9,7 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -19,16 +19,13 @@ public class ProgramListService {
     private final ProgramListJdbcRepository programListRepository;
 
     // 직원 번호로 Program List를 조회하여 프로그램 ID 리스트 반환
-    public List<Integer> getProgramIdListByEmpNo(@NonNull final String empNo) {
-        // DB에서 EMP_NO를 통해 ProgramList를 조회
-        System.out.println("getProgramIdListByEmpNo / empNo : " + empNo);
+    public List<Long> getProgramIdListByEmpNo(@NonNull final String empNo) {
+        ProgramList programList = programListRepository.findByEmpNo(empNo);
+        List<Integer> programIdList = ProgramListConverter.convertStringToList(programList.getProgramIdList());
 
-        final ProgramList programList = programListRepository.findByEmpNo(empNo);
-        System.out.println("getProgramIdListByEmpNo / programList : " + programList);
-
-        final List<Integer> programIdlist = ProgramListConverter.convertStringToList(programList.getProgramIdList());
-
-        return programIdlist;
+        return programIdList.stream()
+                .map(Integer::longValue) // Integer를 Long으로 변환
+                .collect(Collectors.toList());
     }
 
     // 직원 번호로 Program List와 Program Name을 조합하여 반환하는 서비스 메서드
@@ -37,24 +34,44 @@ public class ProgramListService {
     }
 
     // 직원 번호로 Program List를 생성하는 메서드
-    public void createProgramList(@NonNull final String empNo, @NonNull final List<Integer> programList) {
-        // List<Integer>를 쉼표로 구분된 String으로 변환
-        final String convertedProgramIdList = ProgramListConverter.convertListToString(programList);
+    public void createProgramList(@NonNull final String empNo, @NonNull final List<Long> programList) {
+        // 빈 리스트나 null이 전달될 경우 "N/A"로 기본값 설정
+        String convertedProgramIdList = (programList == null || programList.isEmpty())
+                ? "N/A"
+                : ProgramListConverter.convertListToString(
+                programList.stream().map(Long::intValue).collect(Collectors.toList())
+        );
 
         programListRepository.create(empNo, convertedProgramIdList);
     }
 
     // 직원 번호로 Program List를 업데이트하는 메서드
-    public void updateProgramList(@NonNull final String empNo, @NonNull final List<Integer> programList) {
-        // List<Integer>를 쉼표로 구분된 String으로 변환
-        final String convertedProgramIdList = ProgramListConverter.convertListToString(programList);
+    public void updateProgramExecutionOrder(String empNo, List<Long> newProgramOrder) {
+        // 로깅을 추가하여 empNo와 newProgramOrder 값 확인
+        log.info("Received update request for empNo: {}", empNo);
 
-        programListRepository.update(empNo, convertedProgramIdList);
+        if (newProgramOrder == null) {
+            log.warn("Program order is NULL for empNo: {}", empNo);
+        } else if (newProgramOrder.isEmpty()) {
+            log.warn("Program order is empty for empNo: {}", empNo);
+        } else {
+            log.info("Program order to update: {}", newProgramOrder);
+        }
+
+        if (newProgramOrder == null || newProgramOrder.isEmpty()) {
+            return; // 빈 리스트일 경우 업데이트를 중단하고 기존 데이터 유지
+        }
+
+        String updatedOrder = ProgramListConverter.convertListToString(
+                newProgramOrder.stream().map(Long::intValue).collect(Collectors.toList())
+        );
+
+        log.info("Final updated order string for empNo {}: {}", empNo, updatedOrder);
+        programListRepository.update(empNo, updatedOrder);
     }
 
     // 직원 번호로 Program List를 삭제하는 메서드
     public void deleteProgramList(@NonNull final String empNo) {
         programListRepository.deleteByEmpNo(empNo);
     }
-
 }
