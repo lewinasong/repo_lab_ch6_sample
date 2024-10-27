@@ -1,15 +1,15 @@
 <template>
   <div class="container">
     <div class="user-info">
-      <p>로그인 사용자: {{ user.employeeNumber || "정보 없음" }}</p>
-       <button @click="downloadBatFile" class="download-btn">
-         <span class="icon">⬇️</span> 실행 프로그램 다운로드
-       </button> <!-- 실행 프로그램 다운로드 버튼 -->
+      <p>로그인 사용자: {{ user.name ? user.name + " (" + user.employeeNumber + ")" : "정보 없음" }}</p>
+      <button @click="downloadBatFile" class="download-btn">
+        <span class="icon">⬇️</span> 실행 프로그램 다운로드
+      </button> <!-- 실행 프로그램 다운로드 버튼 -->
     </div>
 
     <h1>수행 프로그램 목록</h1>
     <div class="table-header">
-      <span class="execution-date">실행 일시: {{ executionDate || "불러오는 중..." }}</span>
+      <span class="execution-date">실행 일시: {{ executionDate || "-" }}</span>
     </div>
     <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
 
@@ -33,7 +33,7 @@
       </tbody>
     </table>
 
-    <p v-else>프로그램 목록을 불러오는 중입니다...</p>
+    <p v-else>실행된 프로그램이 없습니다.</p>
   </div>
 </template>
 
@@ -63,7 +63,6 @@ export default {
     async fetchProgramData() {
       this.isLoading = true;
       try {
-        // 첫 번째 API 호출 - 프로그램 목록 불러오기
         const programResponse = await axios.get(`/api/program/PagePgmBase/${this.user.employeeNumber}`);
         this.programList = programResponse.data.map((program) => ({
           ...program,
@@ -72,17 +71,14 @@ export default {
 
         console.log("Program List:", this.programList); // 첫 번째 API 응답 확인
 
-        // 두 번째 API 호출 - 성공 여부 상태값 불러오기
         const statusResponse = await axios.get(`/api/searchByEmpNo/${this.user.employeeNumber}`);
         const statusData = statusResponse.data;
         console.log("Status Data:", statusData); // 두 번째 API 응답 확인
 
-        // 세 번째 API 호출 - EXEC_LIST에서 순서대로 프로그램 ID 가져오기
         const execListResponse = await axios.get(`/api/program/PagePgmDtlEmpno/${this.user.employeeNumber}`);
         const execOrderList = execListResponse.data; // 프로그램 ID 리스트를 순서대로 가져옴
         console.log("Exec Order List:", execOrderList); // 세 번째 API 응답 확인
 
-        // 첫 번째 API 응답과 두 번째 API 응답 데이터 결합
         const orderedProgramList = execOrderList.map((pgmId) => {
           const program = this.programList.find((item) => item.pgmId.toString() === pgmId.toString()) || {};
           const matchingStatus = statusData.find((status) => status.pgmId.toString() === pgmId.toString());
@@ -99,72 +95,51 @@ export default {
         this.isLoading = false;
       }
     },
-        downloadBatFile() {
-          const empNo = this.user.employeeNumber || '정보 없음';
-          const batFileContent = `
-    @echo off
-    setlocal enabledelayedexpansion
-    set empNo=${empNo}
-    echo Calling API to fetch program information for employee number %empNo%
-    curl -X GET "http://localhost:8080/api/programs/%empNo%" -H "Content-Type: application/json" -o programs.json
-    echo Showing programs.json content:
-    type programs.json
-    echo Extracting program sequence, IDs, file paths, and sleep times...
-    for /f "delims=" %%i in ('jq -r ".[] | (.sequence | tostring) + \\" \\" + (.pgmId | tostring) + \\" \\" + .filePath + \\" \\" + (.sleepTime | tostring)" programs.json') do (
-        for /f "tokens=1,2,3,4" %%a in ("%%i") do (
-            echo Running program sequence: %%a, pgmId: %%b for empNo: %empNo% at %%c with sleep time: %%d seconds
-
-            call "%%c"
-
-            if errorlevel 1 (
-                set scssYn=0
-                echo Program sequence: %%a, pgmId: %%b for empNo: %empNo% failed, scssYn: !scssYn!
-            ) else (
-                set scssYn=1
-                echo Program sequence: %%a, pgmId: %%b for empNo: %empNo% succeeded, scssYn: !scssYn!
-            )
-            echo Calling API to insert program status for empNo: %empNo%, pgmId: %%b, scssYn: !scssYn!
-            curl -X POST "http://localhost:8080/api/insertStatus" ^
-                -H "Content-Type: application/json" ^
-                -d "{\\"empNo\\": \\"%empNo%\\", \\"pgmId\\": \\"%%b\\", \\"scssYn\\": !scssYn!}"
-            echo Sleeping for %%d seconds...
-            timeout /t %%d /nobreak >nul
+    downloadBatFile() {
+      const empNo = this.user.employeeNumber || '정보 없음';
+      const batFileContent = `
+@echo off
+setlocal enabledelayedexpansion
+set empNo=${empNo}
+echo Calling API to fetch program information for employee number %empNo%
+curl -X GET "http://localhost:8080/api/programs/%empNo%" -H "Content-Type: application/json" -o programs.json
+echo Showing programs.json content:
+type programs.json
+echo Extracting program sequence, IDs, file paths, and sleep times...
+for /f "delims=" %%i in ('jq -r ".[] | (.sequence | tostring) + \\" \\" + (.pgmId | tostring) + \\" \\" + .filePath + \\" \\" + (.sleepTime | tostring)" programs.json') do (
+    for /f "tokens=1,2,3,4" %%a in ("%%i") do (
+        echo Running program sequence: %%a, pgmId: %%b for empNo: %empNo% at %%c with sleep time: %%d seconds
+        call "%%c"
+        if errorlevel 1 (
+            set scssYn=0
+            echo Program sequence: %%a, pgmId: %%b for empNo: %empNo% failed, scssYn: !scssYn!
+        ) else (
+            set scssYn=1
+            echo Program sequence: %%a, pgmId: %%b for empNo: %empNo% succeeded, scssYn: !scssYn!
         )
+        echo Calling API to insert program status for empNo: %empNo%, pgmId: %%b, scssYn: !scssYn!
+        curl -X POST "http://localhost:8080/api/insertStatus" ^
+            -H "Content-Type: application/json" ^
+            -d "{\\"empNo\\": \\"%empNo%\\", \\"pgmId\\": \\"%%b\\", \\"scssYn\\": !scssYn!}"
+        echo Sleeping for %%d seconds...
+        timeout /t %%d /nobreak >nul
     )
-    pause
-          `;
-          const blob = new Blob([batFileContent], { type: 'text/plain' });
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = 'PC자동실행프로그램.bat';
-          link.click();
-          URL.revokeObjectURL(url); // 다운로드 후 URL 제거
+)
+pause
+      `;
+      const blob = new Blob([batFileContent], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'PC자동실행프로그램.bat';
+      link.click();
+      URL.revokeObjectURL(url); // 다운로드 후 URL 제거
     },
   },
 };
 </script>
 
 <style scoped>
-.user-info {
-  text-align: right;
-  margin-bottom: 20px;
-  font-size: 16px;
-  font-weight: bold;
-}
-@font-face {
-  font-family: 'KCCMurukmuruk';
-  src: url('@/fonts/KCCMurukmuruk.ttf') format('truetype');
-}
-.download-btn {
-  padding: 10px 20px;
-  font-size: 14px;
-  background-color: #FFEFD5;
-  color: black;
-  border: none;
-  cursor: pointer;
-  font-family: 'KCCMurukmuruk', sans-serif;
-}
 .container {
   width: 60%;
   max-width: 800px;
@@ -174,10 +149,36 @@ export default {
 }
 
 .user-info {
-  text-align: right;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
   font-size: 16px;
   font-weight: bold;
+}
+
+.download-btn {
+  padding: 10px 20px;
+  font-size: 14px;
+  background-color: #FFEFD5;
+  color: black;
+  border: 2px solid #FFD700;
+  border-radius: 5px;
+  box-shadow: 2px 4px 6px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  font-family: 'KCCMurukmuruk', sans-serif;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.download-btn:hover {
+  background-color: #FFD700;
+  color: white;
+  box-shadow: 3px 6px 8px rgba(0, 0, 0, 0.3);
+}
+
+.download-btn:active {
+  transform: translateY(2px);
+  box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 h1 {

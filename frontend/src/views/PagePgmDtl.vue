@@ -2,7 +2,7 @@
   <div class="container">
     <!-- 로그인 사용자 정보 -->
     <div class="user-info">
-      <p>로그인 사용자: {{ user.employeeNumber || "정보 없음" }}</p>
+      <p>로그인 사용자: {{ user.name ? user.name + " (" + user.employeeNumber + ")" : "정보 없음" }}</p>
     </div>
 
     <h1>프로그램 실행순서 설정</h1>
@@ -40,7 +40,7 @@
       <table class="fixed-table">
         <thead>
           <tr>
-            <th class="header-cell2">순번 입력</th>
+            <th class="header-cell2">순번</th>
             <th class="header-cell2">프로그램명</th>
           </tr>
         </thead>
@@ -48,7 +48,7 @@
           <!-- 정렬된 프로그램 목록을 렌더링 -->
           <tr v-for="(program, index) in sortedPrograms" :key="index">
             <td>{{ index + 1 }}</td>
-            <td>{{ program.name }}</td>
+            <td>{{ program.pgmNm }}</td>
           </tr>
         </tbody>
       </table>
@@ -66,9 +66,9 @@
 </template>
 
 <script>
-import ModalConfirm from './ModalConfirm.vue'; // 모달 컴포넌트 임포트
-import { useUserStore } from '@/stores/userStore'; // 사용자 정보를 Pinia 스토어에서 가져오기
-import axios from 'axios'; // API 호출을 위한 axios
+import ModalConfirm from './ModalConfirm.vue';
+import { useUserStore } from '@/stores/userStore';
+import axios from 'axios';
 
 export default {
   components: {
@@ -76,55 +76,47 @@ export default {
   },
   data() {
     return {
-      programs: [], // API에서 받아올 프로그램 목록
-      sortedPrograms: [], // 사용자가 정렬한 프로그램 목록
-      showSaveModal: false, // 모달 상태
+      programs: [],
+      sortedPrograms: [],
+      showSaveModal: false,
     };
   },
   computed: {
-    // 사용자 정보를 Pinia 스토어에서 가져옴
     user() {
       const userStore = useUserStore();
       return userStore;
     }
   },
   mounted() {
-    // 컴포넌트가 마운트될 때 프로그램 목록을 API로부터 가져옴
     this.fetchPrograms();
   },
   methods: {
-    // 프로그램 목록을 API에서 받아오는 메서드
     async fetchPrograms() {
       try {
-        const response = await axios.get(`/api/program/PagePgmDtl/${this.user.employeeNumber}`); // API 호출
-        this.programs = response.data; // 프로그램 데이터를 Vue 컴포넌트 상태에 저장
+        const response = await axios.get(`/api/program/PagePgmDtl/${this.user.employeeNumber}`);
+        this.programs = response.data;
       } catch (error) {
-        console.error('프로그램 목록을 불러오는 중 에러 발생:', error); // 에러 처리
+        console.error('프로그램 목록을 불러오는 중 에러 발생:', error);
       }
     },
-    // 순번 입력 유효성 검사
     validateOrder(program) {
       if (!/^\d*$/.test(program.order) || (program.order !== '' && parseInt(program.order) <= 0)) {
-        program.order = ''; // 숫자 유효성 실패 시 순번 초기화
+        program.order = '';
         alert('0 이상의 숫자를 입력하세요.');
       }
     },
-    // 순번이 중복되었는지 확인하는 메서드
     hasDuplicateOrders() {
       const orders = this.programs.map(program => program.order).filter(order => order !== '');
       const uniqueOrders = new Set(orders);
       return uniqueOrders.size !== orders.length;
     },
-    // 순번에 빈 값이 있는지 확인하는 메서드
     hasEmptyOrders() {
       return this.programs.some(program => program.order === '');
     },
-    // 순번이 프로그램 개수보다 큰 값이 있는지 확인
     hasOrderExceedingProgramCount() {
       const maxOrder = Math.max(...this.programs.map(program => parseInt(program.order) || 0));
       return maxOrder > this.programs.length;
     },
-    // 프로그램 목록을 순번에 따라 정렬하는 메서드
     sortPrograms() {
       if (this.hasEmptyOrders()) {
         alert('순번입력이 완료되지 않았습니다. 확인 후 진행해주세요.');
@@ -138,20 +130,17 @@ export default {
         alert('순번은 ' + this.programs.length + ' 이하로 입력해주세요');
         return;
       }
-      // 순번에 따라 프로그램 목록을 정렬
       this.sortedPrograms = this.programs
         .filter(program => program.order !== '' && parseInt(program.order) > 0)
         .sort((a, b) => parseInt(a.order) - parseInt(b.order));
     },
-    // 저장 모달을 열기 위한 메서드
     openSaveModal() {
       if (this.sortedPrograms.length === 0) {
         alert('프로그램 순서를 먼저 확인해주세요.');
         return;
       }
-      this.showSaveModal = true; // 모달 열기
+      this.showSaveModal = true;
     },
-    // 저장 확인 모달에서 확인 버튼을 눌렀을 때 처리하는 메서드
     savePrograms() {
       alert('프로그램 순서가 저장되었습니다.');
       this.showSaveModal = false;
@@ -161,9 +150,9 @@ export default {
 </script>
 
 <style scoped>
-/* 스타일 정의 */
+/* 로그인 사용자 정보 스타일 */
 .user-info {
-  text-align: right;
+  text-align: left;
   margin-bottom: 20px;
   font-size: 16px;
   font-weight: bold;
