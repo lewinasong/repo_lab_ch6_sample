@@ -205,6 +205,13 @@ table, th, td {
   border: 1px solid black;
 }
 
+thead th {
+  background-color: #FCF4C0; /* 표 헤더 색상 적용 */
+  color: black;
+  padding: 8px;
+  text-align: center;
+}
+
 th, td {
   padding: 8px;
   text-align: center;
