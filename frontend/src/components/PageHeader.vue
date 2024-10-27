@@ -6,7 +6,7 @@
       <router-link to="/">로그인화면으로 돌아가기</router-link>
     </div>
     <div class="header" id="nav" v-if="!isHomePage">
-      <router-link to="/PageHome">Home</router-link>
+      <router-link to="/PageHome">프로그램 모니터링</router-link>
       <span class="separator">|</span>
       <router-link to="/PagePgmBase">프로그램 등록 및 수정</router-link>
       <span class="separator">|</span>
