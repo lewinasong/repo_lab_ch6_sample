@@ -1,9 +1,9 @@
 <template>
   <div class="container">
     <!-- 로그인 사용자 정보 -->
-    <div class="user-info">
+     <div class="user-info">
       <p>로그인 사용자: {{ user.name ? user.name + " (" + user.employeeNumber + ")" : "정보 없음" }}</p>
-    </div>
+     </div>
 
     <h1>프로그램 목록</h1>
 
@@ -45,16 +45,71 @@
       </tbody>
     </table>
 
-    <!-- 등록 모달 및 기타 모달 코드 생략 -->
+    <!-- 등록 모달 -->
+    <div v-if="showModal && modalType === 'register'" class="modal">
+      <div class="modal-content">
+        <h2>프로그램 등록</h2>
+        <table class="program-table">
+          <thead>
+            <tr>
+              <th>프로그램명</th>
+              <th>실행파일 경로</th>
+              <th>실행 대기시간(초)</th>
+              <th>삭제</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(program, index) in newPrograms" :key="index">
+              <td><input type="text" v-model="program.pgmNm" placeholder="프로그램명을 입력하세요" required /></td>
+              <td><input type="text" v-model="program.filePath" placeholder="파일 경로를 입력하세요" required @input="validateFilePath(program)" /></td>
+              <td>
+                <input
+                  type="text"
+                  v-model="program.sleepTime"
+                  placeholder="3초이상 입력하세요"
+                  required
+                />
+              </td>
+              <td><button type="button" @click="removeNewProgram(index)">삭제</button></td>
+            </tr>
+          </tbody>
+        </table>
+        <button type="button" @click="addProgram">프로그램 추가</button>
+        <button type="button" @click="openConfirmationModal">등록</button>
+        <button type="button" @click="closeModal">취소</button>
+      </div>
+    </div>
+
+    <!-- 확인 모달 -->
+    <div v-if="showConfirmationModal" class="modal">
+      <div class="modal-content">
+        <h2>프로그램 등록 확인</h2>
+        <p>정말로 프로그램을 등록하시겠습니까?</p>
+        <button type="button" @click="registerMultiplePrograms">확인</button>
+        <button type="button" @click="closeConfirmationModal">취소</button>
+      </div>
+    </div>
+
+    <!-- 수정 및 해제 모달 (ModalBase 사용) -->
+    <ModalBase
+      v-if="showModal && (modalType === 'update' || modalType === 'remove')"
+      :modalType="modalType"
+      :program="selectedProgram"
+      @close="closeModal"
+      @update="submitProgramUpdate"
+      @remove="removeSelectedProgram"
+    />
   </div>
 </template>
 
 <script>
 import { ref, onMounted } from 'vue';
 import { useUserStore } from '@/stores/userStore';
+import ModalBase from './ModalBase.vue';
 import axios from 'axios';
 
 export default {
+  components: { ModalBase },
   setup() {
     const showModal = ref(false);
     const showConfirmationModal = ref(false);
@@ -70,6 +125,12 @@ export default {
       modalType.value = type;
       showModal.value = true;
     };
+    const closeModal = () => {
+      showModal.value = false;
+      newPrograms.value = [{ pgmId: '', pgmNm: '', filePath: '', sleepTime: '' }];
+    };
+    const openConfirmationModal = () => { showConfirmationModal.value = true; };
+    const closeConfirmationModal = () => { showConfirmationModal.value = false; };
 
     const fetchPrograms = async () => {
       try {
@@ -79,6 +140,90 @@ export default {
         }
       } catch (error) {
         console.error("Error fetching program list:", error);
+      }
+    };
+
+    const validateFilePath = (program) => {
+      const filePathRegex = /^[A-Za-z0-9_/\\:.\-\s]*$/; // 공백 허용
+      if (!filePathRegex.test(program.filePath)) {
+        alert('실행 경로는 영문, 숫자, /, \\, :, ., -, 그리고 공백만 입력 가능합니다.');
+        program.filePath = program.filePath.replace(/^[A-Za-z0-9_/\\:.\-\s]/g, ''); // 허용되지 않은 문자 제거
+      }
+    };
+
+    const registerMultiplePrograms = async () => {
+      try {
+        const englishOnlyRegex = /^[A-Za-z0-9_ ]*$/;
+
+        for (const program of newPrograms.value) {
+          if (!program.pgmNm || !program.filePath || !program.sleepTime) {
+            alert('입력되지 않은 항목이 존재합니다. 확인 후 다시 등록해주세요');
+            return;
+          }
+
+          if (program.sleepTime < 3) {
+            alert('대기시간은 3초 이상 입력해야 합니다.');
+            return;
+          }
+
+           // 숫자가 아닌 문자가 포함되어 있으면 경고 메시지 출력
+          if (/[^0-9]/.test(program.sleepTime)) {
+            alert("실행대기시간은 숫자만 입력 가능합니다.");
+            // 숫자 이외의 문자를 모두 제거
+            program.sleepTime = program.sleepTime.replace(/[^0-9]/g, '');
+          }
+          if (!englishOnlyRegex.test(program.pgmNm)) {
+            alert('프로그램명은 영문만 가능합니다. 확인 후 다시 등록해주세요.');
+            return;
+          }
+
+          const programDto = {
+            pgmNm: program.pgmNm,
+            empNo: user.employeeNumber,
+            filePath: program.filePath,
+            sleepTime: program.sleepTime
+          };
+          await axios.post('/api/program/register', programDto);
+        }
+
+        fetchPrograms();
+        closeModal();
+        closeConfirmationModal();
+      } catch (error) {
+        console.error("Error registering programs:", error);
+      }
+    };
+
+    const submitProgramUpdate = async (updatedProgram) => {
+      try {
+        updatedProgram.empNo = user.employeeNumber;
+        updatedProgram.pgmId = selectedProgram.value.pgmId;
+
+        await axios.post('/api/program/modify', updatedProgram);
+        
+        fetchPrograms();
+        closeModal();
+      } catch (error) {
+        console.error("Error updating program:", error);
+      }
+    };
+
+    const addProgram = () => { newPrograms.value.push({ pgmId: '', pgmNm: '', filePath: '', sleepTime: '' }); };
+    const removeNewProgram = (index) => { newPrograms.value.splice(index, 1); };
+
+    const removeSelectedProgram = async () => {
+      if (selectedProgram.value) {
+          try {
+            const programDto = {
+              pgmId: selectedProgram.value.pgmId,
+              empNo: user.employeeNumber
+           };
+            await axios.post('/api/program/delete', programDto);
+            programs.value = programs.value.filter(p => p !== selectedProgram.value);
+            selectedProgram.value = null;
+         } catch (error) {
+            console.error("Error deleting program:", error);
+        }
       }
     };
 
@@ -95,27 +240,35 @@ export default {
       newPrograms,
       user,
       openModal,
+      closeModal,
+      openConfirmationModal,
+      closeConfirmationModal,
+      addProgram,
+      removeNewProgram,
+      registerMultiplePrograms,
+      submitProgramUpdate,
+      removeSelectedProgram,
       fetchPrograms,
+      validateFilePath
     };
   }
 };
 </script>
 
 <style scoped>
+.user-info {
+  text-align: left;
+  margin-bottom: 20px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
 .container {
   width: 80%;
   max-width: 1200px;
   margin: 0 auto;
   padding: 80px 0;
   font-family: 'KCCMurukmuruk', sans-serif;
-}
-
-/* 로그인 사용자 정보 스타일 */
-.user-info {
-  text-align: left;
-  margin-bottom: 20px;
-  font-size: 16px;
-  font-weight: bold;
 }
 
 h1 {
@@ -149,6 +302,39 @@ tbody tr:nth-child(odd) {
 
 tbody tr:nth-child(even) {
   background-color: #ECECEC;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+  background: white;
+  padding: 30px;
+  border-radius: 8px;
+  width: 800px;
+  max-width: 90%;
+  min-height: 400px;
+}
+
+.program-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.program-table th, .program-table td {
+  border: 1px solid #ccc;
+  padding: 10px;
+  text-align: center;
 }
 
 .button-container {
