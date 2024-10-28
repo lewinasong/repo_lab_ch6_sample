@@ -73,15 +73,29 @@ export default {
       programs: [], 
       sortedPrograms: [], 
       showSaveModal: false, 
+      user: {
+        name: '',
+        employeeNumber: ''
+      }
     };
   },
   computed: {
-    user() {
-      const userStore = useUserStore();
-      return userStore;
+    userStore() {
+      return useUserStore();
     },
   },
   mounted() {
+    // Check if user information is available in localStorage
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      this.user = JSON.parse(storedUser);
+    } else {
+      // If not in localStorage, load from user store and save to localStorage
+      this.user.name = this.userStore.name;
+      this.user.employeeNumber = this.userStore.employeeNumber;
+      localStorage.setItem('user', JSON.stringify(this.user));
+    }
+
     this.fetchPrograms();
   },
   methods: {

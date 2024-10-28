@@ -64,9 +64,19 @@ export default {
     };
   },
   mounted() {
+    this.loadUserFromLocalStorage();
     this.fetchProgramData();
   },
   methods: {
+    loadUserFromLocalStorage() {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        this.user = JSON.parse(storedUser); 
+      } else {
+        this.user = { name: this.user.name, employeeNumber: this.user.employeeNumber };
+        localStorage.setItem('user', JSON.stringify(this.user));
+      }
+    },
     async fetchProgramData() {
       this.isLoading = true;
       try {
@@ -177,7 +187,7 @@ export default {
 }
 
 .download-btn {
-  margin-left: auto; /* 버튼을 오른쪽으로 이동 */
+  margin-left: auto;
   padding: 10px 20px;
   font-size: 14px;
   background-color: #FFEFD5;

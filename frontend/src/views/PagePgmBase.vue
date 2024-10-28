@@ -80,17 +80,7 @@
       </div>
     </div>
 
-    <!-- 확인 모달 -->
-    <div v-if="showConfirmationModal" class="modal">
-      <div class="modal-content">
-        <h2>프로그램 등록 확인</h2>
-        <p>정말로 프로그램을 등록하시겠습니까?</p>
-        <button type="button" @click="registerMultiplePrograms">확인</button>
-        <button type="button" @click="closeConfirmationModal">취소</button>
-      </div>
-    </div>
-
-    <!-- 수정 및 해제 모달 (ModalBase 사용) -->
+    <!-- 수정 및 해제 모달 -->
     <ModalBase
       v-if="showModal && (modalType === 'update' || modalType === 'remove')"
       :modalType="modalType"
@@ -112,34 +102,45 @@ export default {
   components: { ModalBase },
   setup() {
     const showModal = ref(false);
-    const showConfirmationModal = ref(false);
     const modalType = ref('');
     const programs = ref([]);
     const selectedProgram = ref(null);
     const newPrograms = ref([{ pgmId: '', pgmNm: '', filePath: '', sleepTime: '' }]);
 
     const userStore = useUserStore();
-    const user = userStore;
+    const user = ref({ name: '', employeeNumber: '' });
+
+    onMounted(() => {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        user.value = JSON.parse(storedUser); 
+      } else {
+        user.value = {
+          name: userStore.name,
+          employeeNumber: userStore.employeeNumber,
+        };
+        localStorage.setItem('user', JSON.stringify(user.value));
+      }
+      fetchPrograms();
+    });
 
     const openModal = (type) => {
       modalType.value = type;
       showModal.value = true;
-
       if (type === 'update' && selectedProgram.value) {
         selectedProgram.value = { ...selectedProgram.value };
       }
     };
+
     const closeModal = () => {
       showModal.value = false;
       newPrograms.value = [{ pgmId: '', pgmNm: '', filePath: '', sleepTime: '' }];
     };
-    const openConfirmationModal = () => { showConfirmationModal.value = true; };
-    const closeConfirmationModal = () => { showConfirmationModal.value = false; };
 
     const fetchPrograms = async () => {
       try {
-        if (user.employeeNumber) {
-          const response = await axios.get(`/api/program/PagePgmBase/${user.employeeNumber}`);
+        if (user.value.employeeNumber) {
+          const response = await axios.get(`/api/program/PagePgmBase/${user.value.employeeNumber}`);
           programs.value = response.data;
         }
       } catch (error) {
@@ -160,21 +161,12 @@ export default {
 
     const validateProgramName = (program) => {
       const allowedChars = /^[A-Za-z0-9_.-]*$/;
-
       if (/\s/.test(program.pgmNm)) {
         alert('프로그램명은 공백 없이 입력해야 합니다.');
         program.pgmNm = program.pgmNm.replace(/\s/g, '');
       } else if (!allowedChars.test(program.pgmNm)) {
         alert('프로그램명은 영문, 숫자, ., _, - 만 입력 가능합니다.');
         program.pgmNm = program.pgmNm.replace(/[^A-Za-z0-9_.-]/g, '');
-      }
-    };
-
-    const limitSleepTime = (program) => {
-      const sleepTimeNumber = parseInt(program.sleepTime, 10);
-      if (isNaN(sleepTimeNumber) || sleepTimeNumber < 3 || sleepTimeNumber > 60) {
-        alert("실행 대기시간은 3초 이상 60초 이내로 입력해야 합니다.");
-        program.sleepTime = sleepTimeNumber < 3 ? "3" : "60";
       }
     };
 
@@ -194,7 +186,7 @@ export default {
 
           const programDto = {
             pgmNm: program.pgmNm,
-            empNo: user.employeeNumber,
+            empNo: user.value.employeeNumber,
             filePath: program.filePath,
             sleepTime: program.sleepTime
           };
@@ -203,7 +195,6 @@ export default {
 
         fetchPrograms();
         closeModal();
-        closeConfirmationModal();
       } catch (error) {
         console.error("Error registering programs:", error);
       }
@@ -211,11 +202,9 @@ export default {
 
     const submitProgramUpdate = async (updatedProgram) => {
       try {
-        updatedProgram.empNo = user.employeeNumber;
+        updatedProgram.empNo = user.value.employeeNumber;
         updatedProgram.pgmId = selectedProgram.value.pgmId;
-
         await axios.post('/api/program/modify', updatedProgram);
-        
         fetchPrograms();
         closeModal();
       } catch (error) {
@@ -226,34 +215,13 @@ export default {
     const addProgram = () => { newPrograms.value.push({ pgmId: '', pgmNm: '', filePath: '', sleepTime: '' }); };
     const removeNewProgram = (index) => { newPrograms.value.splice(index, 1); };
 
-    const removeSelectedProgram = async () => {
-      if (selectedProgram.value) {
-          try {
-            const programDto = {
-              pgmId: selectedProgram.value.pgmId,
-              empNo: user.employeeNumber
-           };
-            await axios.post('/api/program/delete', programDto);
-            programs.value = programs.value.filter(p => p !== selectedProgram.value);
-            selectedProgram.value = null;
-         } catch (error) {
-            console.error("Error deleting program:", error);
-        }
-      }
-    };
-
     const formatDate = (dateString) => {
       const date = new Date(dateString);
       return date.toISOString().split('T')[0];
     };
 
-    onMounted(() => {
-      fetchPrograms();
-    });
-
     return {
       showModal,
-      showConfirmationModal,
       modalType,
       programs,
       selectedProgram,
@@ -261,17 +229,13 @@ export default {
       user,
       openModal,
       closeModal,
-      openConfirmationModal,
-      closeConfirmationModal,
       addProgram,
       removeNewProgram,
       registerMultiplePrograms,
       submitProgramUpdate,
-      removeSelectedProgram,
       fetchPrograms,
       validateFilePath,
       validateProgramName,
-      limitSleepTime,
       formatDate
     };
   }
@@ -378,20 +342,8 @@ button {
   margin-left: 10px;
 }
 
-button:first-child {
-  margin-left: 0;
-}
-
-button:hover {
-  background-color: #45a049;
-}
-
 button:disabled {
   background-color: grey;
   cursor: not-allowed;
-}
-
-button:disabled:hover {
-  background-color: grey;
 }
 </style>
