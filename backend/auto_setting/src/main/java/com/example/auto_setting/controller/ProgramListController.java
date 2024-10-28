@@ -18,8 +18,8 @@ public class ProgramListController {
 
     private final ProgramListService programListService;
 
-    @CrossOrigin(origins = "http://localhost:8089") // 프론트엔드 주소 허용
-
+   // @CrossOrigin(origins = "http://localhost:8089") // 프론트엔드 주소 허용
+   @CrossOrigin(origins = "http://3.209.94.202:8089") // 프론트엔드 주소
     // 직원 번호로 프로그램 ID 리스트 조회 (GET)
     @GetMapping("PagePgmDtlEmpno/{empNo}")
     public ResponseEntity<List<Long>> getProgramIdListByEmpNo(@PathVariable String empNo) {

@@ -19,8 +19,8 @@ public class EmployeeController {
     @Autowired
     private EmployeeService employeeService;
 
-    @CrossOrigin(origins = "http://localhost:8089") // 프론트엔드 주소
-
+    //@CrossOrigin(origins = "http://localhost:8089") // 프론트엔드 주소
+    @CrossOrigin(origins = "http://3.209.94.202:8089") // 프론트엔드 주소
     @GetMapping(path = "/login/{empNo}")
     public String login(
             @PathVariable String empNo
