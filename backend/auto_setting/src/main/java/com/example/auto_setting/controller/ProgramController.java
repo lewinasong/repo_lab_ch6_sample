@@ -34,6 +34,7 @@ public class ProgramController {
         }
     }
 
+    @CrossOrigin(origins = "http://3.209.94.202:8089") // 프론트엔드 주소
     //프로그램 등록
     @PostMapping("/register")
     public ResponseEntity<?> InsertProgram(@RequestBody ProgramDto programDto){
@@ -56,6 +57,7 @@ public class ProgramController {
         }
     }
 
+    @CrossOrigin(origins = "http://3.209.94.202:8089") // 프론트엔드 주소
     //프로그램 수정
     @PostMapping("/modify")
     public ResponseEntity<?> UpdateProgram(@RequestBody ProgramDto programDto){
@@ -79,6 +81,7 @@ public class ProgramController {
         }
     }
 
+    @CrossOrigin(origins = "http://3.209.94.202:8089") // 프론트엔드 주소
     // 프로그램 삭제 (REG_YN을 0으로 업데이트)
     @PostMapping("/delete")
     public ResponseEntity<?> deleteProgram(@RequestBody ProgramDto programDto) {

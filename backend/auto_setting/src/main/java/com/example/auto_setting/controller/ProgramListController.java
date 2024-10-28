@@ -35,6 +35,7 @@ public class ProgramListController {
         }
     }
 
+    @CrossOrigin(origins = "http://3.209.94.202:8089") // 프론트엔드 주소
     // 프로그램 리스트 생성 (POST)
     @PostMapping("/create")
     public ResponseEntity<String> createProgramList(@RequestParam String empNo, @RequestBody List<Long> programList) {
@@ -47,6 +48,7 @@ public class ProgramListController {
         }
     }
 
+    @CrossOrigin(origins = "http://3.209.94.202:8089") // 프론트엔드 주소
     // 프로그램 실행 순서 업데이트 (PUT) - JSON 형태로 empNo와 programOrder 리스트 수신
     @PutMapping("/updateOrder")
     public ResponseEntity<String> updateProgramExecutionOrder(@RequestBody Map<String, Object> request) {
@@ -75,6 +77,7 @@ public class ProgramListController {
         }
     }
 
+    @CrossOrigin(origins = "http://3.209.94.202:8089") // 프론트엔드 주소
     // 프로그램 리스트 삭제 (DELETE)
     @DeleteMapping("/delete/{empNo}")
     public ResponseEntity<String> deleteProgramList(@PathVariable String empNo) {
@@ -87,6 +90,7 @@ public class ProgramListController {
         }
     }
 
+    @CrossOrigin(origins = "http://3.209.94.202:8089") // 프론트엔드 주소
     // 직원 번호로 Program List + Program Name 조회 (GET)
     @GetMapping("/PagePgmDtl/{empNo}")
     public ResponseEntity<?> getProgramListWithNameByEmpNo(@PathVariable String empNo) {

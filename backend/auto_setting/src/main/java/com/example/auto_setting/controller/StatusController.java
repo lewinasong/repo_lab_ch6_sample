@@ -41,6 +41,7 @@ public class StatusController {
         }
     }
 
+    @CrossOrigin(origins = "http://3.209.94.202:8089") // 프론트엔드 주소
     //프로그램 실행 여부 결과 조회
     @GetMapping("/searchByEmpNo/{empNo}")
     public ResponseEntity<List<StatusPersistence.PGM_EXEC_PTCL>> searchByEmpNo(@PathVariable String empNo) {
