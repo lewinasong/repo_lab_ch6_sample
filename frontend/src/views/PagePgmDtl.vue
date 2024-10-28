@@ -85,20 +85,25 @@ export default {
     },
   },
   mounted() {
-    // Check if user information is available in localStorage
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      this.user = JSON.parse(storedUser);
-    } else {
-      // If not in localStorage, load from user store and save to localStorage
-      this.user.name = this.userStore.name;
-      this.user.employeeNumber = this.userStore.employeeNumber;
-      localStorage.setItem('user', JSON.stringify(this.user));
-    }
-
+    // 사용자 정보를 불러오거나 업데이트
+    this.loadUserInfo();
     this.fetchPrograms();
-  },
+  }, 
   methods: {
+    loadUserInfo() {
+      // localStorage에 저장된 사용자 정보가 있는지 확인 후, 업데이트
+      const storedUser = localStorage.getItem('user');
+      
+      if (storedUser) {
+        // localStorage에서 사용자 정보 가져와 data 속성에 반영
+        this.user = JSON.parse(storedUser);
+      } else {
+        // 사용자 정보가 없을 경우 현재 사용자 정보를 가져와서 localStorage에 저장
+        const currentUser = { name: this.userStore.name, employeeNumber: this.userStore.employeeNumber };
+        this.user = currentUser;
+        localStorage.setItem('user', JSON.stringify(currentUser));
+      }
+    },
     async fetchPrograms() {
       try {
         const response = await axios.get(
@@ -119,10 +124,8 @@ export default {
       }
     },
     hasEmptyOrders() {
-      const result = this.programs.some((program) => program.order === '');
-      return result;
+      return this.programs.some((program) => program.order === '');
     },
-    
     hasDuplicateOrders() {
       const orders = this.programs
         .map((program) => program.order)
@@ -130,36 +133,30 @@ export default {
       const uniqueOrders = new Set(orders);
       return uniqueOrders.size !== orders.length;
     },
-    
     hasOrderExceedingProgramCount() {
       const maxOrder = Math.max(
         ...this.programs.map((program) => parseInt(program.order) || 0)
       );
       return maxOrder > this.programs.length;
     },
-
     sortPrograms() {
       console.log("정렬 전 programs:", this.programs);
 
-      // 순번 입력이 되지 않은 항목이 있는지 우선 확인
       if (this.hasEmptyOrders()) {
         alert('순번입력이 안된 항목이 있습니다. 확인후 진행해주세요.');
         return;
       }
 
-      // 중복된 순번 확인
       if (this.hasDuplicateOrders()) {
         alert('중복된 순번이 있습니다. 순번을 확인해주세요.');
         return;
       }
 
-      // 순번이 프로그램 개수를 초과하는지 확인
       if (this.hasOrderExceedingProgramCount()) {
         alert('순번은 ' + this.programs.length + ' 이하로 입력해주세요');
         return;
       }
 
-      // 모든 조건을 통과한 경우 정렬된 프로그램 목록 생성
       this.sortedPrograms = this.programs
         .filter((program) => program.order !== '' && parseInt(program.order) > 0)
         .sort((a, b) => parseInt(a.order) - parseInt(b.order));
@@ -210,6 +207,9 @@ export default {
   },
 };
 </script>
+
+
+
 
 <style scoped>
 /* 스타일 정의 */

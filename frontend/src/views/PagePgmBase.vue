@@ -110,16 +110,21 @@ export default {
     const userStore = useUserStore();
     const user = ref({ name: '', employeeNumber: '' });
 
+    const updateUserInfo = () => {
+      // 새로운 사용자 정보가 있을 때 localStorage 업데이트
+      user.value = {
+        name: userStore.name,
+        employeeNumber: userStore.employeeNumber,
+      };
+      localStorage.setItem('user', JSON.stringify(user.value));
+    };
+
     onMounted(() => {
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
         user.value = JSON.parse(storedUser); 
       } else {
-        user.value = {
-          name: userStore.name,
-          employeeNumber: userStore.employeeNumber,
-        };
-        localStorage.setItem('user', JSON.stringify(user.value));
+        updateUserInfo();
       }
       fetchPrograms();
     });
@@ -236,7 +241,8 @@ export default {
       fetchPrograms,
       validateFilePath,
       validateProgramName,
-      formatDate
+      formatDate,
+      updateUserInfo // 사용자 정보 업데이트 함수
     };
   }
 };
