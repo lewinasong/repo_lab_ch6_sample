@@ -69,12 +69,15 @@ export default {
   },
   methods: {
     loadUserFromLocalStorage() {
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        this.user = JSON.parse(storedUser); 
+      const storedUser = JSON.parse(localStorage.getItem('user'));
+      const currentUser = { name: this.user.name, employeeNumber: this.user.employeeNumber };
+
+      // localStorage의 정보와 현재 사용자 정보가 다르면 업데이트
+      if (!storedUser || storedUser.employeeNumber !== currentUser.employeeNumber || storedUser.name !== currentUser.name) {
+        this.user = currentUser;
+        localStorage.setItem('user', JSON.stringify(currentUser));
       } else {
-        this.user = { name: this.user.name, employeeNumber: this.user.employeeNumber };
-        localStorage.setItem('user', JSON.stringify(this.user));
+        this.user = storedUser; // localStorage의 정보 유지
       }
     },
     async fetchProgramData() {
