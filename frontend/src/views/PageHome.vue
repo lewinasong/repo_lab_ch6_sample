@@ -145,28 +145,23 @@ export default {
         @echo off
         setlocal enabledelayedexpansion
         set empNo=${empNo}
-        echo Calling API to fetch program information for employee number %empNo%
-        curl -X GET "http://localhost:8080/api/programs/%empNo%" -H "Content-Type: application/json" -o programs.json
-        echo Showing programs.json content:
-        type programs.json
-        echo Extracting program sequence, IDs, file paths, and sleep times...
+        echo Calling API
+        echo employee number %empNo%
+        curl -s -X GET "http://localhost:8080/api/programs/%empNo%" -H "Content-Type: application/json" -o programs.json
         for /f "delims=" %%i in ('jq -r ".[] | (.sequence | tostring) + \\" \\" + (.pgmId | tostring) + \\" \\" + .filePath + \\" \\" + (.sleepTime | tostring)" programs.json') do (
             for /f "tokens=1,2,3,4" %%a in ("%%i") do (
-                echo Running program sequence: %%a, pgmId: %%b for empNo: %empNo% at %%c with sleep time: %%d seconds
 
                 call "%%c"
 
-                if errorlevel 1 (
-                    set scssYn=0
-                    echo Program sequence: %%a, pgmId: %%b for empNo: %empNo% failed, scssYn: !scssYn!
-                ) else (
-                    set scssYn=1
-                    echo Program sequence: %%a, pgmId: %%b for empNo: %empNo% succeeded, scssYn: !scssYn!
-                )
-                echo Calling API to insert program status for empNo: %empNo%, pgmId: %%b, scssYn: !scssYn!
-                curl -X POST "http://localhost:8080/api/insertStatus" ^
-                    -H "Content-Type: application/json" ^
-                    -d "{\\"empNo\\": \\"%empNo%\\", \\"pgmId\\": \\"%%b\\", \\"scssYn\\": !scssYn!}"
+                  if errorlevel 1 (
+                      set scssYn=0
+                      echo program sequence: %%a, filepath: %%c, scssYn: N
+                  ) else (
+                      set scssYn=1
+                      echo  program sequence: %%a, filepath: %%c, scssYn: Y
+                  )
+
+                curl -X POST "http://localhost:8080/api/insertStatus" -H "Content-Type: application/json" -d "{\\"empNo\\":\\"%empNo%\\",\\"pgmId\\":\\"%%b\\",\\"scssYn\\":!scssYn!}"
                 echo Sleeping for %%d seconds...
                 timeout /t %%d /nobreak >nul
             )
