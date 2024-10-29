@@ -66,7 +66,7 @@ export default {
           router.push({ name: 'PageHome' });
         } else {
           // 로그인 실패 시 에러 메시지 표시
-          errorMessage.value = "로그인에 실패했습니다. 다시 시도해주세요.";
+          errorMessage.value = "로그인에 실패했습니다. 행번을 확인해주세요.";
         }
 
       } catch (error) {

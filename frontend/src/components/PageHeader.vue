@@ -3,7 +3,7 @@
     <div class="system-name">♥일일 PC 자동세팅 시스템♥</div>
     <!-- 로그인 화면으로 돌아가기 링크를 우측 상단에 배치 -->
     <div class="login-link" v-if="!isHomePage">
-      <router-link to="/" @click="clearLocalStorage">로그인화면으로 돌아가기</router-link>
+      <router-link to="/" @click.prevent="handleLogout">로그인화면으로 돌아가기</router-link>
     </div>
     <div class="header" id="nav" v-if="!isHomePage">
       <router-link to="/PageHome">프로그램 모니터링</router-link>
@@ -24,8 +24,10 @@ export default {
     },
   },
   methods: {
-    clearLocalStorage() {
-      localStorage.removeItem('user'); // localStorage에서 사용자 정보 삭제
+    handleLogout(event) {
+      event.preventDefault(); // 기본 동작 방지
+      localStorage.clear(); // localStorage의 모든 항목을 삭제하여 완전히 초기화
+      this.$router.push('/'); // 수동으로 홈 경로로 이동
     },
   },
 };
