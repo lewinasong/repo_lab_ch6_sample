@@ -122,7 +122,7 @@ export default {
     onMounted(() => {
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
-        user.value = JSON.parse(storedUser); 
+        user.value = JSON.parse(storedUser);
       } else {
         updateUserInfo();
       }
@@ -220,6 +220,24 @@ export default {
     const addProgram = () => { newPrograms.value.push({ pgmId: '', pgmNm: '', filePath: '', sleepTime: '' }); };
     const removeNewProgram = (index) => { newPrograms.value.splice(index, 1); };
 
+    const removeSelectedProgram = async () => {
+      if (selectedProgram.value) {
+          try {
+            const programDto = {
+              pgmId: selectedProgram.value.pgmId,
+              empNo: user.value.employeeNumber
+           };
+            await axios.post('/api/program/delete', programDto);
+            programs.value = programs.value.filter(p => p !== selectedProgram.value);
+
+            await fetchPrograms();
+            selectedProgram.value = null;
+         } catch (error) {
+            console.error("Error deleting program:", error);
+        }
+      }
+    };
+
     const formatDate = (dateString) => {
       const date = new Date(dateString);
       return date.toISOString().split('T')[0];
@@ -238,6 +256,7 @@ export default {
       removeNewProgram,
       registerMultiplePrograms,
       submitProgramUpdate,
+      removeSelectedProgram,
       fetchPrograms,
       validateFilePath,
       validateProgramName,

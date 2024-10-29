@@ -11,11 +11,10 @@
     <div class="table-header">
       <span class="execution-date">
         실행 일시:
-        {{
-          isLoading ? "불러오는 중..." :
-          (executionDate || "실행 기록 없음")
-        }}
+        {{ isLoading ? "불러오는 중..." : (executionDate || "실행 기록 없음") }}
       </span>
+      <!-- 아이콘만 남긴 Refresh 버튼 -->
+      <button @click="refreshData" class="refresh-btn">🔄</button>
     </div>
     <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
 
@@ -136,6 +135,10 @@ export default {
         this.executionDate = "실행 기록 없음";
       }
     },
+    // 새로고침 버튼을 클릭할 때 호출되는 메서드
+    refreshData() {
+      this.fetchProgramData();
+    },
     downloadBatFile() {
       const empNo = this.user.employeeNumber || "정보 없음";
       const batFileContent = `
@@ -161,8 +164,8 @@ export default {
                     echo Program sequence: %%a, pgmId: %%b for empNo: %empNo% succeeded, scssYn: !scssYn!
                 )
                 echo Calling API to insert program status for empNo: %empNo%, pgmId: %%b, scssYn: !scssYn!
-                curl -X POST "http://localhost:8080/api/insertStatus" ^ 
-                    -H "Content-Type: application/json" ^ 
+                curl -X POST "http://localhost:8080/api/insertStatus" ^
+                    -H "Content-Type: application/json" ^
                     -d "{\\"empNo\\": \\"%empNo%\\", \\"pgmId\\": \\"%%b\\", \\"scssYn\\": !scssYn!}"
                 echo Sleeping for %%d seconds...
                 timeout /t %%d /nobreak >nul
@@ -181,7 +184,6 @@ export default {
   },
 };
 </script>
-
 
 <style scoped>
 .user-info {
@@ -219,10 +221,20 @@ h1 {
 .table-header {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   margin-bottom: 10px;
 }
 .execution-date {
   font-size: 16px;
+}
+
+.refresh-btn {
+  margin-left: 10px;
+  padding: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  background: none;
+  border: none;
 }
 
 table {
