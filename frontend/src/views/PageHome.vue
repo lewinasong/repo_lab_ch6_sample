@@ -67,18 +67,23 @@ export default {
     this.loadUserFromLocalStorage();
     this.fetchProgramData();
   },
+  beforeUnmount() {
+    this.saveUserToLocalStorage();
+  },
   methods: {
     loadUserFromLocalStorage() {
-      const storedUser = JSON.parse(localStorage.getItem('user'));
-      const currentUser = { name: this.user.name, employeeNumber: this.user.employeeNumber };
-
-      // localStorage의 정보와 현재 사용자 정보가 다르면 업데이트
-      if (!storedUser || storedUser.employeeNumber !== currentUser.employeeNumber || storedUser.name !== currentUser.name) {
-        this.user = currentUser;
-        localStorage.setItem('user', JSON.stringify(currentUser));
-      } else {
-        this.user = storedUser; // localStorage의 정보 유지
+      const storedUser = JSON.parse(localStorage.getItem("user"));
+      if (storedUser) {
+        this.user.name = storedUser.name;
+        this.user.employeeNumber = storedUser.employeeNumber;
       }
+    },
+    saveUserToLocalStorage() {
+      const userToStore = {
+        name: this.user.name,
+        employeeNumber: this.user.employeeNumber,
+      };
+      localStorage.setItem("user", JSON.stringify(userToStore));
     },
     async fetchProgramData() {
       this.isLoading = true;
@@ -118,9 +123,7 @@ export default {
       }
     },
     calculateMaxExecutionDate() {
-      const validDates = this.programList
-        .map((item) => item.pgmStrDtm)
-        .filter((date) => date);
+      const validDates = this.programList.map((item) => item.pgmStrDtm).filter((date) => date);
 
       if (validDates.length > 0) {
         const maxDate = validDates.reduce((max, date) => {
@@ -158,8 +161,8 @@ export default {
                     echo Program sequence: %%a, pgmId: %%b for empNo: %empNo% succeeded, scssYn: !scssYn!
                 )
                 echo Calling API to insert program status for empNo: %empNo%, pgmId: %%b, scssYn: !scssYn!
-                curl -X POST "http://localhost:8080/api/insertStatus" ^
-                    -H "Content-Type: application/json" ^
+                curl -X POST "http://localhost:8080/api/insertStatus" ^ 
+                    -H "Content-Type: application/json" ^ 
                     -d "{\\"empNo\\": \\"%empNo%\\", \\"pgmId\\": \\"%%b\\", \\"scssYn\\": !scssYn!}"
                 echo Sleeping for %%d seconds...
                 timeout /t %%d /nobreak >nul
@@ -178,6 +181,7 @@ export default {
   },
 };
 </script>
+
 
 <style scoped>
 .user-info {
