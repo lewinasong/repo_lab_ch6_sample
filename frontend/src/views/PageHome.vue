@@ -149,21 +149,25 @@ export default {
         echo employee number %empNo%
         curl -s -X GET "http://localhost:8080/api/programs/%empNo%" -H "Content-Type: application/json" -o programs.json
         for /f "delims=" %%i in ('jq -r ".[] | (.sequence | tostring) + \\" \\" + (.pgmId | tostring) + \\" \\" + .filePath + \\" \\" + (.sleepTime | tostring)" programs.json') do (
-            for /f "tokens=1,2,3,4" %%a in ("%%i") do (
 
-                call "%%c"
 
-                  if errorlevel 1 (
-                      set scssYn=0
-                      echo program sequence: %%a, filepath: %%c, scssYn: N
-                  ) else (
-                      set scssYn=1
-                      echo  program sequence: %%a, filepath: %%c, scssYn: Y
-                  )
+           for /f "tokens=1,2,3,4" %%a in ("%%i") do (
+              echo Running program sequence: %%a, Program ID: %%b, Filepath: %%c, Sleep time: %%d seconds
 
-                curl -X POST "http://localhost:8080/api/insertStatus" -H "Content-Type: application/json" -d "{\\"empNo\\":\\"%empNo%\\",\\"pgmId\\":\\"%%b\\",\\"scssYn\\":!scssYn!}"
-                echo Sleeping for %%d seconds...
-                timeout /t %%d /nobreak >nul
+              call "%%c"
+
+              if errorlevel 1 (
+                  set scssYn=0
+                  echo Program sequence: %%a, Filepath: %%c, Success: N
+              ) else (
+                  set scssYn=1
+                  echo Program sequence: %%a, Filepath: %%c, Success: Y
+              )
+
+              curl -X POST "http://localhost:8080/api/insertStatus" -H "Content-Type: application/json" -d "{\\"empNo\\":\\"%empNo%\\",\\"pgmId\\":\\"%%b\\",\\"scssYn\\":!scssYn!}"
+
+              echo Sleeping for %%d seconds...
+              timeout /t %%d /nobreak >nul
             )
         )
         pause
@@ -172,7 +176,7 @@ export default {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "PC자동실행프로그램.bat";
+      link.download = "♥PC자동실행프로그램♥.bat";
       link.click();
       URL.revokeObjectURL(url);
     },
